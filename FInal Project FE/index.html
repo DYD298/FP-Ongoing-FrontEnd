@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ceylon Stay - Premier Boarding Place Solutions</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar d-none d-lg-block">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-4">
+          <a href="tel:+94714959596"><i class="fas fa-phone-alt me-2"></i>+94 714 95 95 96</a>
+          <a href="mailto:info@ceylonstay.lk"><i class="fas fa-envelope me-2"></i>info@ceylonstay.lk</a>
+        </div>
+        <div class="d-flex gap-3">
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="index.html"> CEYLON STAY </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item">
+            <a class="nav-link active" href="index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="pages/listings.html">Properties</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#about">About Us</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#contact">Contact</a>
+          </li>
+          <li class="nav-item ms-lg-3">
+            <a href="pages/register.html" class="btn btn-success btn-sm rounded-0 px-3">POST AD</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h2 class="hero-title text-white">Find Your Boarding Place</h2>
+
+      <!-- Search Tabs -->
+      <div class="search-tabs"></div>
+
+      <!-- Search Box -->
+      <div class="search-box-container">
+        <form action="pages/listings.html" method="GET">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-bold small text-muted">LOCATION</label>
+              <select class="form-select bg-light" id="info_province">
+                <option value="" selected>Province</option>
+                <option value="Western">Western</option>
+                <option value="Central">Central</option>
+                <option value="Southern">Southern</option>
+                <option value="Northern">Northern</option>
+                <option value="Eastern">Eastern</option>
+                <option value="North Western">North Western</option>
+                <option value="North Central">North Central</option>
+                <option value="Uva">Uva</option>
+                <option value="Sabaragamuwa">Sabaragamuwa</option>
+              </select>
+              <select class="form-select bg-light mt-2" id="info_district">
+                <option value="" selected>District</option>
+
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small text-muted">PROPERTY TYPE</label>
+              <select class="form-select bg-light">
+                <option selected>All Types</option>
+                <option value="1">Single Room</option>
+                <option value="2">Shared Room</option>
+
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small text-muted">MAX PRICE</label>
+              <select class="form-select bg-light">
+                <option selected>Any Price</option>
+                <option value="1">Rs. 5,000</option>
+                <option value="2">Rs. 10,000</option>
+                <option value="3">Rs. 20,000</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-success w-100 py-2 fw-bold rounded-1">
+                SEARCH
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Welcome Section -->
+  <section id="about" class="section-padding bg-white">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-4 mb-2 mb-lg-0 reveal-left">
+          <img
+            src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            alt="About Us" class="img-fluid rounded shadow-lg" />
+        </div>
+        <div class="col-lg-6 ps-lg-5 reveal-right">
+          <h4 class="text-success fw-bold text-uppercase mb-2">
+            Welcome to Ceylon Stay
+          </h4>
+          <h5 class="mb-4 fw-bold gradient-text">
+            The Most Trustworthy Boarding Place Platform in Sri Lanka
+          </h5>
+          <p class="text-muted mb-4">
+            Ceylon Stay is a digital platform designed for making fast and
+            easy connections between boarding place owners and tenants in Sri
+            Lanka. We focus on listing available boarding places, accessing
+            and finding boarding places anywhere and anytime.
+          </p>
+          <div class="row g-4 mb-4">
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <div
+                  class="flex-shrink-0 btn-lg-square bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
+                  style="width: 50px; height: 50px">
+                  <i class="fas fa-check"></i>
+                </div>
+                <div class="ms-3">
+                  <h6 class="mb-0 fw-bold">Verified Listings</h6>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center">
+                <div
+                  class="flex-shrink-0 btn-lg-square bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
+                  style="width: 50px; height: 50px">
+                  <i class="fas fa-clock"></i>
+                </div>
+                <div class="ms-3">
+                  <h6 class="mb-0 fw-bold">Fast Connections</h6>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Properties -->
+  <section class="section-padding bg-light">
+    <div class="container">
+      <div class="section-title reveal">
+        <h2>Featured Properties</h2>
+        <p>
+          Explore our hand-picked selection of the best boarding places
+          available right now.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        <!-- Property 1 -->
+        <div class="col-md-4 reveal delay-100">
+          <div class="property-card">
+            <div class="property-img-wrapper">
+              <span class="property-tag">For Rent</span>
+              <img
+                src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                alt="Property" />
+              <span class="property-price-tag">Rs. 25,000</span>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">Modern Apartment</h5>
+              <span class="card-location"><i class="fas fa-map-marker-alt me-1"></i> Colombo 03</span>
+              <div class="card-features">
+                <span><i class="fas fa-bed"></i> 2 Beds</span>
+                <span><i class="fas fa-bath"></i> 1 Bath</span>
+                <span><i class="fas fa-ruler-combined"></i> 850 sqft</span>
+              </div>
+              <a href="pages/property-details.html" class="btn btn-success w-100 mt-3 rounded-0">VIEW DETAILS</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Property 2 -->
+        <div class="col-md-4 reveal delay-200">
+          <div class="property-card">
+            <div class="property-img-wrapper">
+              <span class="property-tag">For Rent</span>
+              <img
+                src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                alt="Property" />
+              <span class="property-price-tag">Rs. 15,000</span>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">Cozy Annex</h5>
+              <span class="card-location"><i class="fas fa-map-marker-alt me-1"></i> Kandy</span>
+              <div class="card-features">
+                <span><i class="fas fa-bed"></i> 1 Bed</span>
+                <span><i class="fas fa-bath"></i> 1 Bath</span>
+
+              </div>
+              <a href="pages/property-details.html" class="btn btn-success w-100 mt-3 rounded-0">VIEW DETAILS</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Property 3 -->
+        <div class="col-md-4 reveal delay-300">
+          <div class="property-card">
+            <div class="property-img-wrapper">
+              <span class="property-tag">For Rent</span>
+              <img
+                src="https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+                alt="Property" />
+              <span class="property-price-tag">Rs. 8,000</span>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">Student Room</h5>
+              <span class="card-location"><i class="fas fa-map-marker-alt me-1"></i> Malabe</span>
+              <div class="card-features">
+                <span><i class="fas fa-bed"></i> 1 Bed</span>
+                <span><i class="fas fa-bath"></i> Shared</span>
+
+              </div>
+              <a href="pages/property-details.html" class="btn btn-success w-100 mt-3 rounded-0">VIEW DETAILS</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-5">
+        <a href="pages/listings.html"
+          class="btn btn-outline-dark rounded-pill px-5 py-3 fw-bold reveal btn-pulse">BROWSE ALL PROPERTIES</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-3 col-6">
+          <div class="stat-item zoom-in delay-100">
+            <div class="stat-number">1000+</div>
+            <div class="stat-label">Happy Tenants</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="stat-item zoom-in delay-200">
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Properties</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="stat-item zoom-in delay-300">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">Cities</div>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="stat-item zoom-in delay-400">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Support</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Footer -->
+  <footer class="footer" id="contact">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <h5 class="text-white mb-3">CEYLON STAY</h5>
+          <p class="small">
+            The most trustworthy platform for finding boarding places in Sri
+            Lanka. Fast, easy, and secure connections between owners and
+            tenants.
+          </p>
+          <div class="social-links mt-4">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-4">
+          <h5>QUICK LINKS</h5>
+          <a href="index.html" class="footer-link">Home</a>
+          <a href="pages/listings.html" class="footer-link">Properties</a>
+          <a href="#about" class="footer-link">About Us</a>
+
+        </div>
+        <div class="col-lg-2 col-md-6 mb-4">
+          <h5>SUPPORT</h5>
+          <a href="#" class="footer-link">Help Center</a>
+          <a href="#" class="footer-link">Terms of Use</a>
+          <a href="#" class="footer-link">Privacy Policy</a>
+          <a href="#" class="footer-link">FAQs</a>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <h5>CONTACT US</h5>
+          <p class="small mb-2">
+            <i class="fas fa-map-marker-alt me-2 text-primary"></i> 123, Main
+            Street, Colombo 03, Sri Lanka
+          </p>
+          <p class="small mb-2">
+            <i class="fas fa-phone me-2 text-primary"></i> +94 11 234 5678
+          </p>
+          <p class="small mb-2">
+            <i class="fas fa-envelope me-2 text-primary"></i>
+            info@ceylonstay.lk
+          </p>
+
+          <div class="mt-4">
+            <h6 class="text-white small fw-bold mb-2">
+              SUBSCRIBE TO NEWSLETTER
+            </h6>
+            <div class="input-group">
+              <input type="email" class="form-control form-control-sm rounded-0 bg-dark border-secondary text-light"
+                placeholder="Email Address" />
+              <button class="btn btn-primary btn-sm rounded-0" type="button">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="copyright">
+        <p class="mb-0">
+          &copy; 2023 Ceylon Stay. All Rights Reserved. Designed for
+          Excellence.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+
+</html>
