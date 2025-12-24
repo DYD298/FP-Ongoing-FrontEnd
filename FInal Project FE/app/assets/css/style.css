@@ -38,27 +38,12 @@
     --shadow-glow: 0 0 20px rgba(0, 121, 107, 0.3);
 }
 
-[data-theme="dark"] {
-    --text-dark: #f8f9fa;
-    --text-light: #e0e0e0;
-    --text-muted: #a0a0a0;
-    --bg-light: #121212;
-    --bg-white: #1e1e1e;
-    --glass-bg: rgba(30, 30, 30, 0.85);
-    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.5);
-    --input-bg: #2d2d2d;
-    --border-color: #333;
-}
-
 body {
     font-family: var(--font-main);
     color: var(--text-dark);
     background-color: var(--bg-light);
     line-height: 1.7;
     overflow-x: hidden;
-    transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 /* --- Typography Enhancements --- */
@@ -115,11 +100,11 @@ h6 {
 /* --- Navbar Glassmorphism --- */
 .navbar {
     padding: 15px 0;
-    background-color: var(--glass-bg);
+    background-color: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: var(--shadow-sm);
-    transition: all 0.4s ease, background-color 0.5s ease;
+    transition: all 0.4s ease;
 }
 
 .navbar-brand {
@@ -239,15 +224,12 @@ h6 {
     padding: 12px 15px;
     font-size: 0.95rem;
     transition: all 0.3s;
-    background-color: var(--input-bg, #f9f9f9);
-    color: var(--text-dark);
-    border-color: var(--border-color, #eee);
+    background-color: #f9f9f9;
 }
 
 .form-select:focus,
 .form-control:focus {
-    background-color: var(--bg-white);
-    color: var(--text-dark);
+    background-color: #fff;
     border-color: var(--primary-light);
     box-shadow: 0 0 0 4px rgba(0, 121, 107, 0.1);
 }
@@ -291,7 +273,7 @@ h6 {
 
 /* --- Featured Cards --- */
 .property-card {
-    background: var(--bg-white);
+    background: #fff;
     border-radius: var(--border-radius-md);
     border: none;
     box-shadow: var(--shadow-sm);
@@ -356,21 +338,15 @@ h6 {
 }
 
 .card-features {
-    background: var(--bg-light);
+    background: #f8f9fa;
     padding: 15px;
     border-radius: var(--border-radius-sm);
     border-top: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 .card-features span {
     font-weight: 500;
     color: var(--text-dark);
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .card-features i {
@@ -495,7 +471,7 @@ h6 {
 .reveal-right,
 .zoom-in {
     opacity: 0;
-    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
 }
 
 .reveal.active {
@@ -548,50 +524,4 @@ h6 {
 
 .delay-400 {
     transition-delay: 0.4s;
-}
-
-/* --- Controls (Dark Mode & Language) --- */
-.util-btn {
-    background: transparent;
-    border: 1px solid rgba(0,0,0,0.1);
-    color: var(--text-dark);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-[data-theme="dark"] .util-btn {
-    border-color: rgba(255,255,255,0.2);
-}
-
-.util-btn:hover {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-    transform: rotate(15deg);
-}
-
-.card {
-     background-color: var(--bg-white);
-     color: var(--text-dark);
-     transition: background-color 0.5s ease;
-}
-
-.bg-light {
-    background-color: var(--bg-light) !important;
-    transition: background-color 0.5s ease;
-}
-
-.breadcrumb-item a {
-    color: var(--primary-color);
-    text-decoration: none;
-}
-
-.breadcrumb-item.active {
-    color: var(--text-muted);
 }

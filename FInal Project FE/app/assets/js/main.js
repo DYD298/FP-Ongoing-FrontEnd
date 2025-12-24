@@ -11,47 +11,6 @@ $(document).ready(function () {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
 
-    // Theme Management
-    const themeToggle = document.getElementById('themeToggle');
-    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-    const html = document.documentElement;
-    const icon = themeToggle ? themeToggle.querySelector('i') : null;
-    const mobileIcon = mobileThemeToggle ? mobileThemeToggle.querySelector('i') : null;
-
-    // Check Local Storage
-    const currentTheme = localStorage.getItem('theme');
-    if (currentTheme) {
-        html.setAttribute('data-theme', currentTheme);
-        updateIcons(currentTheme);
-    }
-
-    function updateIcons(theme) {
-        if (theme === 'dark') {
-            if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
-            if (mobileIcon) { mobileIcon.classList.remove('fa-moon'); mobileIcon.classList.add('fa-sun'); mobileThemeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode'; }
-        } else {
-            if (icon) { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
-            if (mobileIcon) { mobileIcon.classList.remove('fa-sun'); mobileIcon.classList.add('fa-moon'); mobileThemeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode'; }
-        }
-    }
-
-    function toggleTheme() {
-        let theme = html.getAttribute('data-theme');
-        if (theme === 'dark') {
-            html.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            updateIcons('light');
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            updateIcons('dark');
-        }
-    }
-
-    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
-    if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
-
-
     // Navbar Scroll Effect
     $(window).scroll(function () {
         if ($(this).scrollTop() > 50) {
@@ -128,17 +87,4 @@ $(document).ready(function () {
     revealElements.forEach(el => {
         revealObserver.observe(el);
     });
-
-    // Language Selector (Mock)
-    window.changeLang = function (lang) {
-        const langMap = {
-            'en': 'English',
-            'si': 'Sinhala',
-            'ta': 'Tamil'
-        };
-        const currentLangSpan = document.getElementById('currentLang');
-        if (currentLangSpan) currentLangSpan.innerText = langMap[lang];
-        // Here you would implement actual translation logic or redirection
-        console.log("Language changed to: " + langMap[lang]);
-    };
 });
