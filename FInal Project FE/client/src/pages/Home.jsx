@@ -58,15 +58,50 @@ const Home = () => {
         <>
             {/* Hero Section */}
             <section className="hero-section">
-                <div className="hero-overlay"></div>
+                <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{
+                        position: "absolute",
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        top: 0,
+                        left: 0,
+                        zIndex: 0
+                    }}
+                >
+                    <source src="https://videos.pexels.com/video-files/7578552/7578552-uhd_2560_1440_30fps.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+                <div className="hero-overlay" style={{ zIndex: 1 }}></div>
                 <div className="hero-content">
                     <motion.h1
                         className="hero-title"
-                        initial={{ opacity: 0, y: -50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1 }}
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                            hidden: { opacity: 1 },
+                            visible: {
+                                transition: {
+                                    staggerChildren: 0.05
+                                }
+                            }
+                        }}
                     >
-                        {t('hero.title')}
+                        {t('hero.title').split("").map((char, index) => (
+                            <motion.span
+                                key={index}
+                                variants={{
+                                    hidden: { opacity: 0, y: 50 },
+                                    visible: { opacity: 1, y: 0 }
+                                }}
+                            >
+                                {char}
+                            </motion.span>
+                        ))}
                     </motion.h1>
 
                     <motion.div

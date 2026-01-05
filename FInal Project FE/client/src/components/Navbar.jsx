@@ -32,15 +32,15 @@ const Navigation = () => {
             {/* Top Bar */}
             <div className="top-bar d-none d-lg-block">
                 <Container>
-                    <div className="d-flex justify-content-between align-items-center">
-                        <div className="d-flex gap-4">
-                            <a href="tel:+94714959596"><i className="fas fa-phone-alt me-2"></i>+94 714 95 95 96</a>
-                            <a href="mailto:info@ceylonstay.lk"><i className="fas fa-envelope me-2"></i>info@ceylonstay.lk</a>
+                    <div className="top-bar-container">
+                        <div className="top-bar-left">
+                            <a href="tel:+94714959596"><i className="fas fa-phone-alt"></i>+94 714 95 95 96</a>
+                            <a href="mailto:info@ceylonstay.lk"><i className="fas fa-envelope"></i>info@ceylonstay.lk</a>
                         </div>
-                        <div className="d-flex gap-3 align-items-center social-links">
+                        <div className="top-bar-right social-links">
                             {/* Language Switcher (Desktop) */}
-                            <Dropdown className="me-3">
-                                <Dropdown.Toggle variant="link" id="dropdown-basic" className="p-0 text-decoration-none text-uppercase" style={{ color: 'inherit', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                            <Dropdown className="me-2">
+                                <Dropdown.Toggle variant="link" id="dropdown-basic" className="p-0 text-decoration-none text-uppercase" style={{ color: 'inherit', fontSize: '0.85rem', fontWeight: 'bold' }}>
                                     {language}
                                 </Dropdown.Toggle>
 
@@ -54,7 +54,7 @@ const Navigation = () => {
                             {/* Theme Toggle Button (Desktop) */}
                             <Button
                                 variant="link"
-                                className="p-0 text-decoration-none me-3"
+                                className="p-0 text-decoration-none me-2"
                                 onClick={toggleTheme}
                                 style={{ color: 'inherit' }}
                                 title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
@@ -62,10 +62,12 @@ const Navigation = () => {
                                 <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
                             </Button>
 
-                            <a href="#"><i className="fab fa-facebook-f"></i></a>
-                            <a href="#"><i className="fab fa-twitter"></i></a>
-                            <a href="#"><i className="fab fa-instagram"></i></a>
-                            <a href="#"><i className="fab fa-linkedin-in"></i></a>
+                            <div className="d-flex gap-2">
+                                <a href="#"><i className="fab fa-facebook-f"></i></a>
+                                <a href="#"><i className="fab fa-twitter"></i></a>
+                                <a href="#"><i className="fab fa-instagram"></i></a>
+                                <a href="#"><i className="fab fa-linkedin-in"></i></a>
+                            </div>
                         </div>
                     </div>
                 </Container>
