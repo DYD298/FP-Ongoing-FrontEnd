@@ -218,8 +218,8 @@ h6 {
 
 /* --- Navbar Glassmorphism --- */
 .navbar {
-  padding: 8px 0;
-  /* Compact touch target area */
+  padding: 14px 0;
+  /* More spacious */
   background-color: var(--glass-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -337,26 +337,43 @@ h6 {
 
 @media (max-width: 768px) {
   .search-box-container {
-    padding: 20px; /* Reduced padding for mobile */
-    margin-top: 20px;
+    padding: 20px;
+    margin-top: 10px;
   }
   
   .hero-title {
-    font-size: 2rem; /* Smaller title on mobile */
-    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
   }
 
   .form-select,
   .form-control {
-    padding: 10px 14px; /* Slightly smaller inputs */
+    padding: 10px 14px;
     font-size: 0.9rem;
   }
   
   .hero-section {
-     min-height: auto; /* Allow height to adapt */
+     min-height: auto;
      height: auto;
-     padding-top: 120px; /* Ensure content is not hidden behind fixed navbar */
-     padding-bottom: 50px;
+     padding-top: 100px; /* Increased from 60px to fix overlap with Navbar */
+     padding-bottom: 40px;
+  }
+
+  .navbar {
+      top: 0 !important; /* Force navbar to top */
+  }
+
+  .navbar-brand {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+  }
+  
+  .navbar-toggler {
+      border: none;
+      padding: 0;
+      z-index: 1052;
   }
 }
 
