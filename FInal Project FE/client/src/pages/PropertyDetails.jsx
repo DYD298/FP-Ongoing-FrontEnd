@@ -36,7 +36,7 @@ const PropertyDetails = () => {
                                         className="d-block w-100"
                                         src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
                                         alt="Living Room"
-                                        style={{ height: "500px", objectFit: "cover" }}
+                                        style={{ height: "400px", objectFit: "cover" }}
                                     />
                                 </Carousel.Item>
                                 <Carousel.Item>
@@ -44,7 +44,7 @@ const PropertyDetails = () => {
                                         className="d-block w-100"
                                         src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
                                         alt="Bedroom"
-                                        style={{ height: "500px", objectFit: "cover" }}
+                                        style={{ height: "400px", objectFit: "cover" }}
                                     />
                                 </Carousel.Item>
                                 <Carousel.Item>
@@ -52,7 +52,7 @@ const PropertyDetails = () => {
                                         className="d-block w-100"
                                         src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
                                         alt="Kitchen"
-                                        style={{ height: "500px", objectFit: "cover" }}
+                                        style={{ height: "400px", objectFit: "cover" }}
                                     />
                                 </Carousel.Item>
                             </Carousel>
@@ -108,18 +108,9 @@ const PropertyDetails = () => {
                                 </Col>
                             ))}
                         </Row>
-
-                        {/* Location Map */}
-                        <h4 className="mb-3">{t('property.location')}</h4>
-                        <div className="bg-light rounded-3 d-flex align-items-center justify-content-center overflow-hidden mb-4" style={{ height: "400px" }}>
-                            <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.8497182996875!2d80.3548452745689!3d7.481841692530128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae33a22f7ef7d7d%3A0x1ea33b80e7201808!2sNational%20Institute%20of%20Business%20Management%20(NIBM)%20Kurunegala%20Centre!5e0!3m2!1sen!2ssg!4v1765206650214!5m2!1sen!2ssg"
-                                width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"></iframe>
-                        </div>
                     </Col>
 
-                    {/* Sidebar Contact */}
+                    {/* Sidebar Contact & Map */}
                     <Col lg={4}>
                         <motion.div
                             initial={{ opacity: 0, x: 50 }}
@@ -128,6 +119,15 @@ const PropertyDetails = () => {
                             transition={{ delay: 0.3 }}
                             style={{ position: 'sticky', top: '100px', zIndex: 1 }}
                         >
+                            {/* Location Map (Moved) */}
+                            <h5 className="mb-3">{t('property.location')}</h5>
+                            <div className="bg-light rounded-3 d-flex align-items-center justify-content-center overflow-hidden mb-4 shadow-sm" style={{ height: "300px" }}>
+                                <iframe
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.8497182996875!2d80.3548452745689!3d7.481841692530128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae33a22f7ef7d7d%3A0x1ea33b80e7201808!2sNational%20Institute%20of%20Business%20Management%20(NIBM)%20Kurunegala%20Centre!5e0!3m2!1sen!2ssg!4v1765206650214!5m2!1sen!2ssg"
+                                    width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"></iframe>
+                            </div>
+
                             <Card className="shadow-sm border-0">
                                 <Card.Body className="p-4">
                                     <Card.Title className="mb-4">{t('property.contactOwner')}</Card.Title>

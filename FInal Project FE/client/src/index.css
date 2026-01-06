@@ -335,6 +335,31 @@ h6 {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
 }
 
+@media (max-width: 768px) {
+  .search-box-container {
+    padding: 20px; /* Reduced padding for mobile */
+    margin-top: 20px;
+  }
+  
+  .hero-title {
+    font-size: 2rem; /* Smaller title on mobile */
+    margin-bottom: 1.5rem;
+  }
+
+  .form-select,
+  .form-control {
+    padding: 10px 14px; /* Slightly smaller inputs */
+    font-size: 0.9rem;
+  }
+  
+  .hero-section {
+     min-height: auto; /* Allow height to adapt */
+     height: auto;
+     padding-top: 120px; /* Ensure content is not hidden behind fixed navbar */
+     padding-bottom: 50px;
+  }
+}
+
 .form-label {
   font-weight: 600;
   font-size: 0.9rem;
