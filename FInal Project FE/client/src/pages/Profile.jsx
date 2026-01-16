@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, LogOut, Mail, Phone, MapPin, FileText, Save } from 'lucide-react';
+import { User, LogOut, Mail, Phone, MapPin, FileText, Save, ArrowLeft } from 'lucide-react';
 
-const Dashboard = () => {
+const Profile = () => {
   const navigate = useNavigate();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // State for form fields
   const [formData, setFormData] = useState({
@@ -20,7 +28,6 @@ const Dashboard = () => {
 
   // Handle Logout
   const handleLogout = () => {
-    // Add actual logout logic here
     localStorage.removeItem('isAuthenticated');
     navigate('/login');
   };
@@ -84,26 +91,23 @@ const Dashboard = () => {
               
               {/* Profile Header Background */}
               <div className="bg-success p-4 position-relative" style={{ background: 'var(--primary-gradient)', height: '150px' }}>
+                <div className="position-absolute top-0 start-0 m-4">
+                  <button 
+                    onClick={() => navigate(-1)} 
+                    className="btn btn-light btn-sm d-flex align-items-center gap-2 fw-bold shadow-sm"
+                  >
+                    <ArrowLeft size={16} />
+                    BACK
+                  </button>
+                </div>
                 <div className="position-absolute top-0 end-0 m-4">
-                  <div className="d-flex gap-2">
-                    <button 
-                      onClick={() => {
-                        localStorage.setItem('isAuthenticated', 'true');
-                        navigate('/listings');
-                      }} 
-                      className="btn btn-light btn-sm d-flex align-items-center gap-2 fw-bold shadow-sm"
-                    >
-                      <MapPin size={16} />
-                      VIEW LISTINGS
-                    </button>
-                    <button 
-                      onClick={handleLogout} 
-                      className="btn btn-outline-light btn-sm d-flex align-items-center gap-2 fw-bold shadow-sm bg-white text-danger border-0"
-                    >
-                      <LogOut size={16} />
-                      LOG OUT
-                    </button>
-                  </div>
+                  <button 
+                    onClick={handleLogout} 
+                    className="btn btn-outline-light btn-sm d-flex align-items-center gap-2 fw-bold shadow-sm bg-white text-danger border-0"
+                  >
+                    <LogOut size={16} />
+                    LOG OUT
+                  </button>
                 </div>
               </div>
 
@@ -121,18 +125,9 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="text-center text-md-start mb-5 d-flex justify-content-between align-items-center">
-                   <div>
-                     <h2 className="fw-bold text-dark mb-1">{formData.name}</h2>
-                     <p className="text-muted">{formData.email}</p>
-                   </div>
-                   <button 
-                      onClick={() => navigate('/post-ad')}
-                      className="btn btn-success rounded-pill px-4 py-2 shadow-sm fw-bold"
-                      style={{ background: 'var(--primary-gradient)', border: 'none' }}
-                   >
-                      <span className="me-2">+</span> Post New Ad
-                   </button>
+                <div className="text-center text-md-start mb-5">
+                   <h2 className="fw-bold text-dark mb-1">{formData.name}</h2>
+                   <p className="text-muted">{formData.email}</p>
                 </div>
 
                 {/* Form Section */}
@@ -232,7 +227,6 @@ const Dashboard = () => {
                         whileTap={{ scale: 0.98 }}
                         type="submit" 
                         className="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
-                        // Using bootstrap classes but relying on global theme variables for colors
                         style={{ background: 'var(--primary-gradient)', border: 'none' }}
                       >
                         <Save size={20} />
@@ -252,4 +246,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Profile;

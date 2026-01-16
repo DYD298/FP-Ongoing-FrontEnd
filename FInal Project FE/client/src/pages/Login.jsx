@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, LogIn, ArrowRight } from "lucide-react";
+import { Home, LogIn, ArrowRight, ArrowLeft } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 
 const Login = () => {
@@ -17,7 +17,17 @@ const Login = () => {
   };
 
   return (
-    <div className="d-flex min-vh-100 bg-white overflow-hidden font-main">
+    <div className="d-flex min-vh-100 bg-white overflow-hidden font-main position-relative">
+      {/* Back to Home Button */}
+      <Link 
+        to="/" 
+        className="position-absolute top-0 start-0 m-4 btn btn-light d-flex align-items-center gap-2 fw-bold shadow-sm"
+        style={{ zIndex: 10 }}
+      >
+        <ArrowLeft size={18} />
+        BACK TO HOME
+      </Link>
+
       {/* Left Side - Image */}
       <motion.div 
         initial={{ opacity: 0 }}

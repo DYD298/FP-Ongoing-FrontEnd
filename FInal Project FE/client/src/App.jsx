@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import PostAd from "./pages/PostAd";
+import Profile from "./pages/Profile";
 import { useEffect } from "react";
 
 // Scroll to top on route change
@@ -39,6 +40,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/listings" element={<Listings />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />

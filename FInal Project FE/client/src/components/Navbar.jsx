@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Navbar, Nav, Container, Button, Dropdown } from "react-bootstrap";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 
 const Navigation = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { language, changeLanguage, t } = useLanguage();
 
   useEffect(() => {
@@ -16,7 +18,11 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-
+  // Check authentication status
+  useEffect(() => {
+    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+    setIsAuthenticated(authStatus);
+  }, [location]);
 
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
@@ -27,6 +33,16 @@ const Navigation = () => {
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    setIsAuthenticated(false);
+    navigate('/login');
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
   };
 
   return (
@@ -203,13 +219,46 @@ const Navigation = () => {
               </Nav.Link>
 
               {/* Auth / Profile Section */}
-              <Nav.Link
-                as={Link}
-                to="/register"
-                className="btn btn-success btn-sm text-white ms-3 px-3 rounded-0"
-              >
-                {t("nav.postAd")}
-              </Nav.Link>
+              {isAuthenticated ? (
+                <Dropdown align="end" className="ms-3">
+                  <Dropdown.Toggle
+                    variant="link"
+                    className="p-0 text-decoration-none"
+                    id="profile-dropdown"
+                    style={{ color: "inherit", border: "none", cursor: "pointer" }}
+                  >
+                    <div 
+                      className="rounded-circle d-flex align-items-center justify-content-center"
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        backgroundColor: "var(--primary-color)",
+                        color: "white"
+                      }}
+                    >
+                      <i className="fas fa-user fa-sm"></i>
+                    </div>
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={handleProfileClick}>
+                      <i className="fas fa-user me-2"></i>My Profile
+                    </Dropdown.Item>
+                    <Dropdown.Divider />
+                    <Dropdown.Item onClick={handleLogout} className="text-danger">
+                      <i className="fas fa-sign-out-alt me-2"></i>Logout
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              ) : (
+                <Nav.Link
+                  as={Link}
+                  to="/register"
+                  className="btn btn-success btn-sm text-white ms-3 px-3 rounded-0"
+                >
+                  {t("nav.postAd")}
+                </Nav.Link>
+              )}
             </Nav>
           </Navbar.Collapse>
         </Container>
