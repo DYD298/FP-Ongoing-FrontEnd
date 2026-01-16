@@ -254,7 +254,8 @@ const Navigation = () => {
                 <Nav.Link
                   as={Link}
                   to="/register"
-                  className="btn btn-success btn-sm text-white ms-3 px-3 rounded-0"
+                  className="btn btn-success btn-sm ms-3 px-4 rounded-pill fw-bold"
+                  style={{ color: '#ffffff !important', background: 'var(--primary-gradient)', border: 'none', fontSize: '0.95rem' }}
                 >
                   {t("nav.postAd")}
                 </Nav.Link>
