@@ -16,6 +16,8 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+
+
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   useEffect(() => {
@@ -125,19 +127,21 @@ const Navigation = () => {
               >
                 {t('nav.properties')}
               </Nav.Link>
-              <Nav.Link
-                href="#about"
-                onClick={(e) => {
-                  if (location.pathname === "/") {
-                    e.preventDefault();
-                    document
-                      .getElementById("about")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  }
-                }}
-              >
-                {t('nav.about')}
-              </Nav.Link>
+              {location.pathname !== '/listings' && (
+                <Nav.Link
+                  href="#about"
+                  onClick={(e) => {
+                    if (location.pathname === "/") {
+                      e.preventDefault();
+                      document
+                        .getElementById("about")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
+                >
+                  {t('nav.about')}
+                </Nav.Link>
+              )}
               <Nav.Link
                 href="#contact"
                 onClick={(e) => {
@@ -198,6 +202,7 @@ const Navigation = () => {
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </Nav.Link>
 
+              {/* Auth / Profile Section */}
               <Nav.Link
                 as={Link}
                 to="/register"

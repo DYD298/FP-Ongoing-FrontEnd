@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, LogIn, ArrowRight } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -7,9 +7,13 @@ import { useLanguage } from "../contexts/LanguageContext";
 const Login = () => {
   const { t } = useLanguage();
 
+  const navigator = useNavigate();
+
   const handleGoogleLogin = () => {
     // Implement Google Login Logic
     console.log("Google Login");
+    localStorage.setItem('isAuthenticated', 'true');
+    navigator('/dashboard');
   };
 
   return (

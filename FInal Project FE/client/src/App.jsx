@@ -7,6 +7,8 @@ import Listings from "./pages/Listings";
 import PropertyDetails from "./pages/PropertyDetails";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import PostAd from "./pages/PostAd";
 import { useEffect } from "react";
 
 // Scroll to top on route change
@@ -40,6 +42,8 @@ const App = () => {
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/post-ad" element={<PostAd />} />
       </Routes>
     </Router>
   );
