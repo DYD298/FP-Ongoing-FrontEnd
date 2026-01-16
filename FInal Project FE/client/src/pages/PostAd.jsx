@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 // Step 1: Basic Details
-const DetailsStep = ({ formData, updateFormData }) => (
+const DetailsStep = ({ formData, updateFormData, errors }) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -28,19 +28,20 @@ const DetailsStep = ({ formData, updateFormData }) => (
         <span className="input-group-text bg-light border-0"><Home size={18} /></span>
         <input 
           type="text" 
-          className="form-control bg-light border-0 py-3" 
+          className={`form-control bg-light border-0 py-3 ${errors.title ? 'is-invalid' : ''}`}
           placeholder="e.g. Modern Room near University"
           value={formData.title}
           onChange={(e) => updateFormData('title', e.target.value)}
         />
       </div>
+      {errors.title && <div className="text-danger small mt-2">{errors.title}</div>}
     </div>
 
     <div className="row">
       <div className="col-md-6 mb-3">
         <label className="form-label fw-bold small text-uppercase text-muted">Category</label>
         <select 
-          className="form-select bg-light border-0 py-3"
+          className={`form-select bg-light border-0 py-3 ${errors.category ? 'is-invalid' : ''}`}
           value={formData.category}
           onChange={(e) => updateFormData('category', e.target.value)}
         >
@@ -49,6 +50,7 @@ const DetailsStep = ({ formData, updateFormData }) => (
           <option value="room">Single Room</option>
           <option value="annex">Annex</option>
         </select>
+        {errors.category && <div className="text-danger small mt-2">{errors.category}</div>}
       </div>
       <div className="col-md-6 mb-3">
         <label className="form-label fw-bold small text-uppercase text-muted">Price (LKR)</label>
@@ -56,30 +58,32 @@ const DetailsStep = ({ formData, updateFormData }) => (
           <span className="input-group-text bg-light border-0"><DollarSign size={18} /></span>
           <input 
             type="number" 
-            className="form-control bg-light border-0 py-3" 
+            className={`form-control bg-light border-0 py-3 ${errors.price ? 'is-invalid' : ''}`}
             placeholder="e.g. 15000"
             value={formData.price}
             onChange={(e) => updateFormData('price', e.target.value)}
           />
         </div>
+        {errors.price && <div className="text-danger small mt-2">{errors.price}</div>}
       </div>
     </div>
 
     <div className="mb-3">
       <label className="form-label fw-bold small text-uppercase text-muted">Description</label>
       <textarea 
-        className="form-control bg-light border-0" 
+        className={`form-control bg-light border-0 ${errors.description ? 'is-invalid' : ''}`}
         rows="5"
         placeholder="Describe your property..."
         value={formData.description}
         onChange={(e) => updateFormData('description', e.target.value)}
       ></textarea>
+      {errors.description && <div className="text-danger small mt-2">{errors.description}</div>}
     </div>
   </motion.div>
 );
 
 // Step 2: Location & Map
-const LocationStep = ({ formData, updateFormData }) => (
+const LocationStep = ({ formData, updateFormData, errors }) => (
   <motion.div
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -93,23 +97,25 @@ const LocationStep = ({ formData, updateFormData }) => (
         <span className="input-group-text bg-light border-0"><MapPin size={18} /></span>
         <input 
           type="text" 
-          className="form-control bg-light border-0 py-3" 
+          className={`form-control bg-light border-0 py-3 ${errors.address ? 'is-invalid' : ''}`}
           placeholder="Property Address"
           value={formData.address}
           onChange={(e) => updateFormData('address', e.target.value)}
         />
       </div>
+      {errors.address && <div className="text-danger small mt-2">{errors.address}</div>}
     </div>
 
     <div className="mb-4">
       <label className="form-label fw-bold small text-uppercase text-muted">City</label>
       <input 
         type="text" 
-        className="form-control bg-light border-0 py-3" 
+        className={`form-control bg-light border-0 py-3 ${errors.city ? 'is-invalid' : ''}`}
         placeholder="e.g. Colombo"
         value={formData.city}
         onChange={(e) => updateFormData('city', e.target.value)}
       />
+      {errors.city && <div className="text-danger small mt-2">{errors.city}</div>}
     </div>
 
     {/* Map Placeholder */}
@@ -184,6 +190,7 @@ const PhotosStep = ({ formData, updateFormData }) => {
 const PostAd = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     title: '',
     category: 'boarding-house',
@@ -197,27 +204,98 @@ const PostAd = () => {
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
-  const nextStep = () => setCurrentStep(prev => prev + 1);
-  const prevStep = () => setCurrentStep(prev => prev - 1);
+  // Validation functions
+  const validateDetailsStep = () => {
+    const newErrors = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (formData.title.trim().length < 5) {
+      newErrors.title = 'Title must be at least 5 characters';
+    }
+
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
+    }
+
+    if (!formData.price) {
+      newErrors.price = 'Price is required';
+    } else if (parseInt(formData.price) <= 0) {
+      newErrors.price = 'Price must be greater than 0';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateLocationStep = () => {
+    const newErrors = {};
+
+    if (!formData.address.trim()) {
+      newErrors.address = 'Address is required';
+    } else if (formData.address.trim().length < 5) {
+      newErrors.address = 'Address must be at least 5 characters';
+    }
+
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    } else if (formData.city.trim().length < 2) {
+      newErrors.city = 'City must be at least 2 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const nextStep = () => {
+    setCurrentStep(prev => prev + 1);
+  };
+  
+  const prevStep = () => {
+    setCurrentStep(prev => prev - 1);
+    setErrors({});
+  };
+
+  const handleNext = (e) => {
+    e.preventDefault();
+    
+    if (currentStep === 1) {
+      if (validateDetailsStep()) {
+        nextStep();
+      }
+    } else if (currentStep === 2) {
+      if (validateLocationStep()) {
+        nextStep();
+      }
+    } else {
+      nextStep();
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (currentStep < 3) {
-      nextStep();
-    } else {
-      if (formData.images.length === 0) {
-        alert("Please upload at least one photo before submitting.");
-        return;
-      }
-      console.log("Submitting Ad:", formData);
-      // Simulate API call
-      setTimeout(() => {
-        alert("Ad submitted successfully!");
-        navigate('/dashboard');
-      }, 1000);
+    if (formData.images.length === 0) {
+      alert("Please upload at least one photo before submitting.");
+      return;
     }
+    console.log("Submitting Ad:", formData);
+    // Simulate API call
+    setTimeout(() => {
+      alert("Ad submitted successfully!");
+      navigate('/dashboard');
+    }, 1000);
   };
 
   return (
@@ -248,10 +326,10 @@ const PostAd = () => {
             <div className="card shadow-lg border-0 rounded-4 overflow-hidden">
               <div className="card-body p-4 p-md-5">
                 
-                <form onSubmit={handleSubmit}>
+                <form>
                   <AnimatePresence mode='wait'>
-                    {currentStep === 1 && <DetailsStep key="step1" formData={formData} updateFormData={updateFormData} />}
-                    {currentStep === 2 && <LocationStep key="step2" formData={formData} updateFormData={updateFormData} />}
+                    {currentStep === 1 && <DetailsStep key="step1" formData={formData} updateFormData={updateFormData} errors={errors} />}
+                    {currentStep === 2 && <LocationStep key="step2" formData={formData} updateFormData={updateFormData} errors={errors} />}
                     {currentStep === 3 && <PhotosStep key="step3" formData={formData} updateFormData={updateFormData} />}
                   </AnimatePresence>
 
@@ -274,7 +352,7 @@ const PostAd = () => {
                     {currentStep < 3 ? (
                       <button 
                         type="button" 
-                        onClick={nextStep}
+                        onClick={handleNext}
                         className="btn btn-success rounded-pill px-5 py-3 fw-bold d-flex align-items-center shadow-sm"
                         style={{ background: 'var(--primary-gradient)', border: 'none' }}
                       >
@@ -282,7 +360,8 @@ const PostAd = () => {
                       </button>
                     ) : (
                       <button 
-                        type="submit"
+                        type="button"
+                        onClick={handleSubmit}
                         className="btn btn-success rounded-pill px-5 py-3 fw-bold d-flex align-items-center shadow-lg hover-scale"
                         style={{ background: 'var(--primary-gradient)', border: 'none' }}
                       >
