@@ -8,8 +8,8 @@ const Dashboard = () => {
 
   // State for form fields
   const [formData, setFormData] = useState({
-    name: 'John Doe', 
-    email: 'john.doe@example.com',
+    name: 'DYD', 
+    email: 'desanyasandu@gmail.com',
     phone: '',
     address: '',
     description: ''
