@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Navbar, Nav, Container, Button, Dropdown } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useAuthContext } from "@asgardeo/auth-react";
 
 const Navigation = () => {
+  const { state, signOut } = useAuthContext();
   const [scrolled, setScrolled] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { language, changeLanguage, t } = useLanguage();
@@ -17,12 +18,6 @@ const Navigation = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Check authentication status
-  useEffect(() => {
-    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
-    setIsAuthenticated(authStatus);
-  }, [location]);
 
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
@@ -36,9 +31,7 @@ const Navigation = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    setIsAuthenticated(false);
-    navigate('/login');
+    signOut();
   };
 
   const handleProfileClick = () => {
@@ -219,7 +212,7 @@ const Navigation = () => {
               </Nav.Link>
 
               {/* Auth / Profile Section */}
-              {isAuthenticated ? (
+              {state.isAuthenticated ? (
                 <Dropdown align="end" className="ms-3">
                   <Dropdown.Toggle
                     variant="link"
