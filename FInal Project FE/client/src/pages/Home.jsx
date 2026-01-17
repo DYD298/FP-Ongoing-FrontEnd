@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
@@ -26,38 +26,42 @@ const pulseAnimation = {
     transition: { duration: 2, repeat: Infinity }
 };
 
+// Data
+const provincesList = ["Western", "Central", "Southern", "Northern", "Eastern", "North Western", "North Central", "Uva", "Sabaragamuwa"];
+// Mock Districts for demo
+const districtsData = {
+    "Western": ["Colombo", "Gampaha", "Kalutara"],
+    "Central": ["Kandy", "Matale", "Nuwara Eliya"],
+    "Southern": ["Galle", "Matara", "Hambantota"],
+    "Northern": ["Jaffna", "Kilinochchi", "Mannar"],
+    "Eastern": ["Trincomalee", "Batticaloa", "Ampara"],
+    "North Western": ["Kurunegala", "Puttalam"],
+    "North Central": ["Anuradhapura", "Polonnaruwa"],
+    "Uva": ["Badulla", "Monaragala"],
+    "Sabaragamuwa": ["Ratnapura", "Kegalle"]
+};
+
 const Home = () => {
     const [province, setProvince] = useState("");
-    const [districts, setDistricts] = useState([]);
+    const [selectedDistrict, setSelectedDistrict] = useState("");
+    const [propertyType, setPropertyType] = useState("");
+    const [clientType, setClientType] = useState("");
+    const [maxPrice, setMaxPrice] = useState("");
     const navigate = useNavigate();
     const { t } = useLanguage();
 
-    // Data
-    const provincesList = ["Western", "Central", "Southern", "Northern", "Eastern", "North Western", "North Central", "Uva", "Sabaragamuwa"];
-    // Mock Districts for demo
-    const districtsData = {
-        "Western": ["Colombo", "Gampaha", "Kalutara"],
-        "Central": ["Kandy", "Matale", "Nuwara Eliya"],
-        "Southern": ["Galle", "Matara", "Hambantota"],
-        "Northern": ["Jaffna", "Kilinochchi", "Mannar"],
-        "Eastern": ["Trincomalee", "Batticaloa", "Ampara"],
-        "North Western": ["Kurunegala", "Puttalam"],
-        "North Central": ["Anuradhapura", "Polonnaruwa"],
-        "Uva": ["Badulla", "Monaragala"],
-        "Sabaragamuwa": ["Ratnapura", "Kegalle"]
-    };
-
-    useEffect(() => {
-        if (province && districtsData[province]) {
-            setDistricts(districtsData[province]);
-        } else {
-            setDistricts([]);
-        }
-    }, [province]);
+    const districts = province && districtsData[province] ? districtsData[province] : [];
 
     const handleSearch = (e) => {
         e.preventDefault();
-        navigate(`/listings?province=${province}`);
+        const params = new URLSearchParams();
+        if (province) params.append("province", province);
+        if (selectedDistrict) params.append("district", selectedDistrict);
+        if (propertyType) params.append("propertyType", propertyType);
+        if (clientType) params.append("clientType", clientType);
+        if (maxPrice) params.append("maxPrice", maxPrice);
+        
+        navigate(`/listings?${params.toString()}`);
     };
 
     return (
@@ -125,7 +129,14 @@ const Home = () => {
                                             <Form.Label className="fw-bold small text-uppercase text-muted mb-2">
                                                 <MapPin size={16} className="me-2" />{t('hero.location')}
                                             </Form.Label>
-                                            <Form.Select className="bg-light border-0 py-3 rounded-3" value={province} onChange={(e) => setProvince(e.target.value)}>
+                                            <Form.Select 
+                                                className="bg-light border-0 py-3 rounded-3" 
+                                                value={province} 
+                                                onChange={(e) => {
+                                                    setProvince(e.target.value);
+                                                    setSelectedDistrict("");
+                                                }}
+                                            >
                                                 <option value="">{t('hero.province')}</option>
                                                 {provincesList.map(p => <option key={p} value={p}>{p}</option>)}
                                             </Form.Select>
@@ -134,7 +145,12 @@ const Home = () => {
                                     <Col lg={6}>
                                         <div>
                                             <Form.Label className="fw-bold small text-uppercase text-muted mb-2 d-none d-lg-block">&nbsp;</Form.Label>
-                                            <Form.Select className="bg-light border-0 py-3 rounded-3" name="district" disabled={!districts.length}>
+                                            <Form.Select 
+                                                className="bg-light border-0 py-3 rounded-3" 
+                                                value={selectedDistrict}
+                                                onChange={(e) => setSelectedDistrict(e.target.value)}
+                                                disabled={!districts.length}
+                                            >
                                                 <option value="">{t('hero.district')}</option>
                                                 {districts.map(d => <option key={d} value={d}>{d}</option>)}
                                             </Form.Select>
@@ -147,10 +163,14 @@ const Home = () => {
                                             <Form.Label className="fw-bold small text-uppercase text-muted mb-2">
                                                 <Building2 size={16} className="me-2" />{t('hero.propertyType')}
                                             </Form.Label>
-                                            <Form.Select className="bg-light border-0 py-3 rounded-3">
-                                                <option>{t('hero.allTypes')}</option>
-                                                <option value="1">{t('hero.singleRoom')}</option>
-                                                <option value="2">{t('hero.sharedRoom')}</option>
+                                            <Form.Select 
+                                                className="bg-light border-0 py-3 rounded-3"
+                                                value={propertyType}
+                                                onChange={(e) => setPropertyType(e.target.value)}
+                                            >
+                                                <option value="">{t('hero.allTypes')}</option>
+                                                <option value="single-room">{t('hero.singleRoom')}</option>
+                                                <option value="shared-room">{t('hero.sharedRoom')}</option>
                                             </Form.Select>
                                         </div>
                                     </Col>
@@ -159,12 +179,16 @@ const Home = () => {
                                             <Form.Label className="fw-bold small text-uppercase text-muted mb-2">
                                                 <Users size={16} className="me-2" />{t('hero.clientType')}
                                             </Form.Label>
-                                            <Form.Select className="bg-light border-0 py-3 rounded-3">
-                                                <option>{t('hero.select')}</option>
-                                                <option value="1">{t('hero.gender.girls')}</option>
-                                                <option value="2">{t('hero.gender.boys')}</option>
-                                                <option value="3">{t('hero.gender.couples')}</option>
-                                                <option value="4">{t('hero.gender.family')}</option>
+                                            <Form.Select 
+                                                className="bg-light border-0 py-3 rounded-3"
+                                                value={clientType}
+                                                onChange={(e) => setClientType(e.target.value)}
+                                            >
+                                                <option value="">{t('hero.select')}</option>
+                                                <option value="girls">{t('hero.gender.girls')}</option>
+                                                <option value="boys">{t('hero.gender.boys')}</option>
+                                                <option value="couples">{t('hero.gender.couples')}</option>
+                                                <option value="family">{t('hero.gender.family')}</option>
                                             </Form.Select>
                                         </div>
                                     </Col>
@@ -173,11 +197,16 @@ const Home = () => {
                                             <Form.Label className="fw-bold small text-uppercase text-muted mb-2">
                                                 <span className="me-2">💰</span>{t('hero.maxPrice')}
                                             </Form.Label>
-                                            <Form.Select className="bg-light border-0 py-3 rounded-3">
-                                                <option>{t('hero.anyPrice')}</option>
-                                                <option value="1">Rs. 5,000</option>
-                                                <option value="2">Rs. 10,000</option>
-                                                <option value="3">Rs. 20,000</option>
+                                            <Form.Select 
+                                                className="bg-light border-0 py-3 rounded-3"
+                                                value={maxPrice}
+                                                onChange={(e) => setMaxPrice(e.target.value)}
+                                            >
+                                                <option value="">{t('hero.anyPrice')}</option>
+                                                <option value="5000">Rs. 5,000</option>
+                                                <option value="10000">Rs. 10,000</option>
+                                                <option value="20000">Rs. 20,000</option>
+                                                <option value="50000">Rs. 50,000</option>
                                             </Form.Select>
                                         </div>
                                     </Col>
