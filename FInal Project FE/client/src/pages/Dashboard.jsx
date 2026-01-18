@@ -10,8 +10,8 @@ const Dashboard = () => {
   const { state, signOut, getAccessToken } = useAuthContext();
 
   const [formData, setFormData] = useState({
-    name: '', 
-    email: '',
+    name: 'John Doe', 
+    email: 'john.doe@example.com',
     phone: '',
     address: '',
     description: ''
