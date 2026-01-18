@@ -7,7 +7,9 @@ import {
   DollarSign, 
   CheckCircle,
   Upload,
-  X
+  X,
+  Bed,
+  Bath
 } from 'lucide-react';
 import { useAuthContext } from "@asgardeo/auth-react";
 import Toast from '../components/Toast';
@@ -58,6 +60,36 @@ const DetailsStep = ({ formData, updateFormData, errors }) => (
           />
         </div>
         {errors.price && <div className="text-danger small mt-2">{errors.price}</div>}
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-md-6 mb-3">
+        <label className="form-label fw-bold small text-uppercase text-muted">Beds</label>
+        <div className="input-group">
+          <span className="input-group-text bg-light border-0"><Bed size={18} /></span>
+          <input 
+            type="number" 
+            className={`form-control bg-light border-0 py-3 ${errors.beds ? 'is-invalid' : ''}`} 
+            placeholder="e.g. 2" 
+            value={formData.beds} 
+            onChange={(e) => updateFormData('beds', e.target.value)} 
+          />
+        </div>
+        {errors.beds && <div className="text-danger small mt-2">{errors.beds}</div>}
+      </div>
+      <div className="col-md-6 mb-3">
+        <label className="form-label fw-bold small text-uppercase text-muted">Baths</label>
+        <div className="input-group">
+          <span className="input-group-text bg-light border-0"><Bath size={18} /></span>
+          <input 
+            type="number" 
+            className={`form-control bg-light border-0 py-3 ${errors.baths ? 'is-invalid' : ''}`} 
+            placeholder="e.g. 1" 
+            value={formData.baths} 
+            onChange={(e) => updateFormData('baths', e.target.value)} 
+          />
+        </div>
+        {errors.baths && <div className="text-danger small mt-2">{errors.baths}</div>}
       </div>
     </div>
     <div className="mb-3">
@@ -178,6 +210,8 @@ const PostAd = () => {
     address: '',
     city: '',
     province: 'Western',
+    beds: '1',
+    baths: '1',
     imageFiles: []
   });
 
@@ -192,6 +226,8 @@ const PostAd = () => {
       if (!formData.title) err.title = "Title required";
       if (!formData.price) err.price = "Price required";
       if (!formData.description) err.description = "Description required";
+      if (!formData.beds || formData.beds < 1) err.beds = "At least 1 bed required";
+      if (!formData.baths || formData.baths < 0) err.baths = "Baths cannot be negative";
     } else if (currentStep === 2) {
       if (!formData.address) err.address = "Address required";
       if (!formData.city) err.city = "City / District required";
@@ -217,8 +253,8 @@ const PostAd = () => {
       data.append("province", formData.province);
       data.append("district", formData.city);
       data.append("type", formData.category);
-      data.append("beds", 1); // Defaulting as example
-      data.append("baths", 1); // Defaulting as example
+      data.append("beds", Number(formData.beds));
+      data.append("baths", Number(formData.baths));
       data.append("facilities", JSON.stringify(["Wifi", "Parking"])); // Example static facilities
 
       // Backend expects 'images' field name
