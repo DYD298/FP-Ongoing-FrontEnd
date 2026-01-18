@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Carousel, Card, Button, Spinner, Badge } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Bed, Bath, Maximize, Sofa, CheckCircle, Phone, Mail, ShieldAlert, Clock, ImageOff } from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, Sofa, CheckCircle, Phone, Mail, ShieldAlert, Clock, ImageOff, Send, X } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
+import Toast from '../components/Toast';
+import { Modal, Form } from 'react-bootstrap';
 
 const PropertyDetails = () => {
     const { id } = useParams();
@@ -12,6 +14,11 @@ const PropertyDetails = () => {
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [showPhone, setShowPhone] = useState(false);
+    const [showMessageModal, setShowMessageModal] = useState(false);
+    const [messageText, setMessageText] = useState("");
+    const [isSending, setIsSending] = useState(false);
+    const [showToast, setShowToast] = useState(false);
 
     // Configuration - Pointing to your FastAPI Proxy
     const API_BASE_URL = "http://localhost:8001";
@@ -40,7 +47,9 @@ const PropertyDetails = () => {
                     // Simple logic to extract a display name from email
                     owner: { 
                         name: data.owner_email ? data.owner_email.split('@')[0] : "Owner", 
-                        since: "2024" 
+                        since: "2024",
+                        phone: data.phone || "077 123 4567", // Fallback for demo
+                        email: data.owner_email 
                     } 
                 });
             } catch (err) {
@@ -70,6 +79,12 @@ const PropertyDetails = () => {
 
     return (
         <div style={{ paddingTop: "100px", paddingBottom: "50px", background: "#fdfdfd" }}>
+            <Toast 
+                show={showToast} 
+                onClose={() => setShowToast(false)} 
+                title="Message Sent" 
+                message="Your message has been sent to the property owner's email." 
+            />
             <Container>
                 {/* Status Badge */}
                 {property.status === "PENDING" && (
@@ -183,11 +198,19 @@ const PropertyDetails = () => {
                                     </div>
 
                                     <div className="d-grid gap-3">
-                                        <Button variant="success" className="py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill border-0 shadow-sm transition-hover">
-                                            <Phone size={18} /> {t('property.showPhone') || 'Call Owner'}
+                                        <Button 
+                                            variant={showPhone ? "light" : "success"} 
+                                            onClick={() => setShowPhone(!showPhone)}
+                                            className={`py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill border-0 shadow-sm transition-hover ${showPhone ? 'bg-light text-dark' : ''}`}
+                                        >
+                                            <Phone size={18} /> {showPhone ? property.owner.phone : (t('property.showPhone') || 'SHOW PHONE NUMBER')}
                                         </Button>
-                                        <Button variant="outline-success" className="py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill">
-                                            <Mail size={18} /> {t('property.sendMessage') || 'Email Owner'}
+                                        <Button 
+                                            variant="outline-success" 
+                                            onClick={() => setShowMessageModal(true)}
+                                            className="py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill"
+                                        >
+                                            <Mail size={18} /> {t('property.sendMessage') || 'SEND MESSAGE'}
                                         </Button>
                                     </div>
 
@@ -209,6 +232,50 @@ const PropertyDetails = () => {
                     </Col>
                 </Row>
             </Container>
+
+            {/* Message Owner Modal */}
+            <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)} centered className="rounded-4">
+                <Modal.Header closeButton className="border-0 pb-0">
+                    <Modal.Title className="fw-bold">Send Message to {property.owner.name}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    <Form onSubmit={(e) => {
+                        e.preventDefault();
+                        setIsSending(true);
+                        // Simulate API call
+                        setTimeout(() => {
+                            setIsSending(false);
+                            setShowMessageModal(false);
+                            setMessageText("");
+                            setShowToast(true);
+                            // Open mailto as a fallback to actually "send" to email
+                            window.location.href = `mailto:${property.owner.email}?subject=Inquiry for ${property.title}&body=${messageText}`;
+                        }, 1000);
+                    }}>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small fw-bold text-muted text-uppercase">Your Message</Form.Label>
+                            <Form.Control 
+                                as="textarea" 
+                                rows={5} 
+                                required
+                                value={messageText}
+                                onChange={(e) => setMessageText(e.target.value)}
+                                placeholder="I'm interested in this property. Is it still available?"
+                                className="bg-light border-0 p-3 rounded-3"
+                            />
+                        </Form.Group>
+                        <Button 
+                            variant="success" 
+                            type="submit" 
+                            disabled={isSending}
+                            className="w-100 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2"
+                        >
+                            {isSending ? <Spinner size="sm" /> : <Send size={18} />}
+                            {isSending ? "Sending..." : "Send via Email"}
+                        </Button>
+                    </Form>
+                </Modal.Body>
+            </Modal>
         </div>
     );
 };

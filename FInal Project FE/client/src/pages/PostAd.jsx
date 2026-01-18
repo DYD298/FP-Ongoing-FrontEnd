@@ -9,7 +9,13 @@ import {
   Upload,
   X,
   Bed,
-  Bath
+  Bath,
+  Tv,
+  Wifi,
+  Car,
+  Wind,
+  Refrigerator,
+  Zap
 } from 'lucide-react';
 import { useAuthContext } from "@asgardeo/auth-react";
 import Toast from '../components/Toast';
@@ -90,6 +96,47 @@ const DetailsStep = ({ formData, updateFormData, errors }) => (
           />
         </div>
         {errors.baths && <div className="text-danger small mt-2">{errors.baths}</div>}
+      </div>
+    </div>
+    <div className="mb-3">
+      <label className="form-label fw-bold small text-uppercase text-muted">Furniture</label>
+      <select 
+        className="form-select bg-light border-0 py-3" 
+        value={formData.furniture} 
+        onChange={(e) => updateFormData('furniture', e.target.value)}
+      >
+        <option value="Unfurnished">Unfurnished</option>
+        <option value="Semi-Furnished">Semi-Furnished</option>
+        <option value="Furnished">Fully Furnished</option>
+      </select>
+    </div>
+    <div className="mb-3">
+      <label className="form-label fw-bold small text-uppercase text-muted">Facilities</label>
+      <div className="row g-2 mt-1">
+        {[
+          { id: 'wifi', label: 'Wifi', icon: <Wifi size={16} /> },
+          { id: 'parking', label: 'Parking', icon: <Car size={16} /> },
+          { id: 'ac', label: 'A/C', icon: <Wind size={16} /> },
+          { id: 'tv', label: 'TV', icon: <Tv size={16} /> },
+          { id: 'fridge', label: 'Fridge', icon: <Refrigerator size={16} /> },
+          { id: 'power', label: 'Back-up Power', icon: <Zap size={16} /> }
+        ].map((fac) => (
+          <div className="col-6 col-md-4" key={fac.id}>
+            <div 
+              className={`p-3 rounded-3 border d-flex align-items-center gap-2 cursor-pointer transition-all ${formData.facilities.includes(fac.label) ? 'border-success bg-success bg-opacity-10 text-success' : 'bg-light border-transparent text-muted'}`}
+              onClick={() => {
+                const current = formData.facilities;
+                const updated = current.includes(fac.label) 
+                  ? current.filter(f => f !== fac.label) 
+                  : [...current, fac.label];
+                updateFormData('facilities', updated);
+              }}
+            >
+              {fac.icon}
+              <span className="small fw-bold">{fac.label}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
     <div className="mb-3">
@@ -212,6 +259,8 @@ const PostAd = () => {
     province: 'Western',
     beds: '1',
     baths: '1',
+    furniture: 'Unfurnished',
+    facilities: [],
     imageFiles: []
   });
 
@@ -255,7 +304,7 @@ const PostAd = () => {
       data.append("type", formData.category);
       data.append("beds", Number(formData.beds));
       data.append("baths", Number(formData.baths));
-      data.append("facilities", JSON.stringify(["Wifi", "Parking"])); // Example static facilities
+      data.append("facilities", JSON.stringify([...formData.facilities, formData.furniture]));
 
       // Backend expects 'images' field name
       formData.imageFiles.forEach((imgObj) => {
