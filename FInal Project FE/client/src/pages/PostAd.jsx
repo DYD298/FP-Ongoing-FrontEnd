@@ -10,6 +10,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuthContext } from "@asgardeo/auth-react";
+import Toast from '../components/Toast';
 
 // --- Sub-components (Step Views) ---
 
@@ -167,6 +168,7 @@ const PostAd = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showToast, setShowToast] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -234,8 +236,11 @@ const PostAd = () => {
       });
 
       if (response.ok) {
-          alert("Ad posted successfully! It will appear once AI verification is complete.");
-          navigate('/dashboard');
+          setShowToast(true);
+          // Wait for 3 seconds to let the user see the toast before navigating
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 3000);
       } else {
           const errorData = await response.json();
           alert(`Failed to post ad: ${errorData.detail || 'Unknown error'}`);
@@ -250,6 +255,12 @@ const PostAd = () => {
 
   return (
     <div className="min-vh-100 bg-light py-5 mt-5">
+      <Toast 
+        show={showToast} 
+        onClose={() => setShowToast(false)} 
+        title="Ad Posted Successfully" 
+        message="Your ad has been submitted and will appear once verified."
+      />
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-lg-8">
