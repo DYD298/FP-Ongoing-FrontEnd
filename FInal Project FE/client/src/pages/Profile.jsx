@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from "@asgardeo/auth-react";
 import { User, Mail, Phone, MapPin, FileText, Save, Loader2 } from 'lucide-react';
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import Toast from '../components/Toast';
 
 const Profile = () => {
   const { state, getAccessToken } = useAuthContext();
@@ -17,6 +16,7 @@ const Profile = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,7 +49,7 @@ const Profile = () => {
     if (state.isAuthenticated) {
       fetchProfile();
     }
-  }, [state.isAuthenticated, getAccessToken]);
+  }, [state.isAuthenticated, getAccessToken, state.displayName, state.email]);
 
   
   const handleSave = async (e) => {
@@ -73,14 +73,13 @@ const Profile = () => {
       });
 
       if (response.ok) {
-        toast.success("Profile updated successfully!");
-        
+        setShowToast(true);
       } else {
-        toast.error("Failed to update profile.");
+        alert("Failed to update profile.");
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("Something went wrong. Try again.");
+      alert("Something went wrong. Try again.");
     } finally {
       setSaving(false);
     }
@@ -94,6 +93,12 @@ const Profile = () => {
 
   return (
     <div className="container py-5 mt-5">
+      <Toast 
+        show={showToast} 
+        onClose={() => setShowToast(false)} 
+        title="Profile Updated" 
+        message="Your profile information has been saved successfully."
+      />
       <div className="card shadow border-0 p-4">
         <h2 className="mb-4 fw-bold">Edit Profile</h2>
         <form onSubmit={handleSave}>
