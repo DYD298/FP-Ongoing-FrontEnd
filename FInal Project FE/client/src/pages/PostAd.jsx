@@ -5,44 +5,37 @@ import {
   MapPin, 
   Home, 
   DollarSign, 
-  ChevronRight, 
-  ChevronLeft, 
   CheckCircle,
   Upload,
-  Save
+  X
 } from 'lucide-react';
+import { useAuthContext } from "@asgardeo/auth-react";
 
-// Step 1: Basic Details
+// --- Sub-components (Step Views) ---
+
 const DetailsStep = ({ formData, updateFormData, errors }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-    className="space-y-4"
-  >
+  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
     <h3 className="h4 fw-bold mb-4 text-dark">Property Details</h3>
-    
     <div className="mb-3">
       <label className="form-label fw-bold small text-uppercase text-muted">Title</label>
       <div className="input-group">
         <span className="input-group-text bg-light border-0"><Home size={18} /></span>
         <input 
           type="text" 
-          className={`form-control bg-light border-0 py-3 ${errors.title ? 'is-invalid' : ''}`}
-          placeholder="e.g. Modern Room near University"
-          value={formData.title}
-          onChange={(e) => updateFormData('title', e.target.value)}
+          className={`form-control bg-light border-0 py-3 ${errors.title ? 'is-invalid' : ''}`} 
+          placeholder="e.g. Modern Room near University" 
+          value={formData.title} 
+          onChange={(e) => updateFormData('title', e.target.value)} 
         />
       </div>
       {errors.title && <div className="text-danger small mt-2">{errors.title}</div>}
     </div>
-
     <div className="row">
       <div className="col-md-6 mb-3">
         <label className="form-label fw-bold small text-uppercase text-muted">Category</label>
         <select 
-          className={`form-select bg-light border-0 py-3 ${errors.category ? 'is-invalid' : ''}`}
-          value={formData.category}
+          className="form-select bg-light border-0 py-3" 
+          value={formData.category} 
           onChange={(e) => updateFormData('category', e.target.value)}
         >
           <option value="boarding-house">Boarding House</option>
@@ -50,31 +43,29 @@ const DetailsStep = ({ formData, updateFormData, errors }) => (
           <option value="room">Single Room</option>
           <option value="annex">Annex</option>
         </select>
-        {errors.category && <div className="text-danger small mt-2">{errors.category}</div>}
       </div>
       <div className="col-md-6 mb-3">
-        <label className="form-label fw-bold small text-uppercase text-muted">Price (LKR)</label>
+        <label className="form-label fw-bold small text-uppercase text-muted">Price (LKR / Month)</label>
         <div className="input-group">
           <span className="input-group-text bg-light border-0"><DollarSign size={18} /></span>
           <input 
             type="number" 
-            className={`form-control bg-light border-0 py-3 ${errors.price ? 'is-invalid' : ''}`}
-            placeholder="e.g. 15000"
-            value={formData.price}
-            onChange={(e) => updateFormData('price', e.target.value)}
+            className={`form-control bg-light border-0 py-3 ${errors.price ? 'is-invalid' : ''}`} 
+            placeholder="e.g. 15000" 
+            value={formData.price} 
+            onChange={(e) => updateFormData('price', e.target.value)} 
           />
         </div>
         {errors.price && <div className="text-danger small mt-2">{errors.price}</div>}
       </div>
     </div>
-
     <div className="mb-3">
       <label className="form-label fw-bold small text-uppercase text-muted">Description</label>
       <textarea 
-        className={`form-control bg-light border-0 ${errors.description ? 'is-invalid' : ''}`}
-        rows="5"
-        placeholder="Describe your property..."
-        value={formData.description}
+        className={`form-control bg-light border-0 ${errors.description ? 'is-invalid' : ''}`} 
+        rows="5" 
+        placeholder="Describe facilities, rules, etc..." 
+        value={formData.description} 
         onChange={(e) => updateFormData('description', e.target.value)}
       ></textarea>
       {errors.description && <div className="text-danger small mt-2">{errors.description}</div>}
@@ -82,298 +73,221 @@ const DetailsStep = ({ formData, updateFormData, errors }) => (
   </motion.div>
 );
 
-// Step 2: Location & Map
 const LocationStep = ({ formData, updateFormData, errors }) => (
-  <motion.div
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-  >
-    <h3 className="h4 fw-bold mb-4 text-dark">Location & Map</h3>
-    
+  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+    <h3 className="h4 fw-bold mb-4 text-dark">Location</h3>
     <div className="mb-3">
       <label className="form-label fw-bold small text-uppercase text-muted">Address</label>
       <div className="input-group">
         <span className="input-group-text bg-light border-0"><MapPin size={18} /></span>
         <input 
           type="text" 
-          className={`form-control bg-light border-0 py-3 ${errors.address ? 'is-invalid' : ''}`}
-          placeholder="Property Address"
-          value={formData.address}
-          onChange={(e) => updateFormData('address', e.target.value)}
+          className={`form-control bg-light border-0 py-3 ${errors.address ? 'is-invalid' : ''}`} 
+          placeholder="Full Address" 
+          value={formData.address} 
+          onChange={(e) => updateFormData('address', e.target.value)} 
         />
       </div>
       {errors.address && <div className="text-danger small mt-2">{errors.address}</div>}
     </div>
-
-    <div className="mb-4">
-      <label className="form-label fw-bold small text-uppercase text-muted">City</label>
-      <input 
-        type="text" 
-        className={`form-control bg-light border-0 py-3 ${errors.city ? 'is-invalid' : ''}`}
-        placeholder="e.g. Colombo"
-        value={formData.city}
-        onChange={(e) => updateFormData('city', e.target.value)}
-      />
-      {errors.city && <div className="text-danger small mt-2">{errors.city}</div>}
-    </div>
-
-    {/* Map Placeholder */}
-    <div className="rounded-4 overflow-hidden position-relative bg-light d-flex align-items-center justify-content-center" style={{ height: '300px', border: '2px dashed #cbd5e1' }}>
-      <div className="text-center text-muted">
-        <MapPin size={48} className="mb-2 mx-auto opacity-50" />
-        <p className="fw-bold">Select Location on Map</p>
-        <small>(Map integration would appear here)</small>
-      </div>
+    <div className="row">
+        <div className="col-md-6 mb-4">
+            <label className="form-label fw-bold small text-uppercase text-muted">District / City</label>
+            <input 
+                type="text" 
+                className={`form-control bg-light border-0 py-3 ${errors.city ? 'is-invalid' : ''}`} 
+                placeholder="e.g. Colombo" 
+                value={formData.city} 
+                onChange={(e) => updateFormData('city', e.target.value)} 
+            />
+            {errors.city && <div className="text-danger small mt-2">{errors.city}</div>}
+        </div>
+        <div className="col-md-6 mb-4">
+            <label className="form-label fw-bold small text-uppercase text-muted">Province</label>
+            <select 
+                className="form-select bg-light border-0 py-3" 
+                value={formData.province} 
+                onChange={(e) => updateFormData('province', e.target.value)}
+            >
+                <option value="Western">Western</option>
+                <option value="Central">Central</option>
+                <option value="Southern">Southern</option>
+                <option value="North Western">North Western</option>
+                <option value="Sabaragamuwa">Sabaragamuwa</option>
+            </select>
+        </div>
     </div>
   </motion.div>
 );
 
-// Step 3: Photos
 const PhotosStep = ({ formData, updateFormData }) => {
   const handleFileChange = (e) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).map((file) => URL.createObjectURL(file));
-      // Append new images to existing ones, limit to 5 if needed, or just replace/add.
-      // For simplicity, we'll just append.
-      updateFormData('images', [...formData.images, ...filesArray]);
+      const files = Array.from(e.target.files);
+      const newImages = files.map(file => ({
+        file: file,
+        preview: URL.createObjectURL(file)
+      }));
+      updateFormData('imageFiles', [...formData.imageFiles, ...newImages]);
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-    >
-      <h3 className="h4 fw-bold mb-4 text-dark">Upload Photos</h3>
-      
-      <label 
-        htmlFor="file-upload"
-        className="rounded-4 bg-light d-flex flex-column align-items-center justify-content-center p-5 text-center cursor-pointer hover-bg-light-dark w-100" 
-        style={{ border: '2px dashed var(--primary-color)' }}
-      >
-        <div className="bg-white p-3 rounded-circle shadow-sm mb-3">
-          <Upload size={32} className="text-success" />
-        </div>
-        <h5 className="fw-bold text-dark">Click or Drag photos here</h5>
-        <p className="text-muted small mb-0">Up to 5 photos (JPG, PNG)</p>
-        <input 
-          id="file-upload" 
-          type="file" 
-          multiple 
-          accept="image/*" 
-          className="d-none"
-          onChange={handleFileChange}
-        />
-      </label>
+  const removeImage = (index) => {
+    const updated = formData.imageFiles.filter((_, i) => i !== index);
+    updateFormData('imageFiles', updated);
+  };
 
+  return (
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+      <h3 className="h4 fw-bold mb-4 text-dark">Upload Photos</h3>
+      <label htmlFor="file-upload" className="rounded-4 bg-light d-flex flex-column align-items-center justify-content-center p-5 text-center cursor-pointer w-100" style={{ border: '2px dashed #198754' }}>
+        <div className="bg-white p-3 rounded-circle shadow-sm mb-3 text-success"><Upload size={32} /></div>
+        <h5 className="fw-bold text-dark">Upload Property Images</h5>
+        <input id="file-upload" type="file" multiple accept="image/*" className="d-none" onChange={handleFileChange} />
+      </label>
       <div className="row mt-4 g-3">
-         {formData.images.length > 0 ? (
-            formData.images.map((img, index) => (
-              <div className="col-4" key={index}>
-                  <div className="ratio ratio-1x1 rounded-3 overflow-hidden shadow-sm position-relative">
-                    <img src={img} alt={`Preview ${index}`} className="w-100 h-100 object-fit-cover" />
-                  </div>
+         {formData.imageFiles.map((img, index) => (
+            <div className="col-4" key={index}>
+              <div className="ratio ratio-1x1 rounded-3 overflow-hidden shadow-sm position-relative">
+                <img src={img.preview} alt="preview" className="w-100 h-100 object-fit-cover" />
+                <button type="button" onClick={() => removeImage(index)} className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-1"><X size={14}/></button>
               </div>
-            ))
-         ) : (
-           <div className="col-12 text-center text-muted mt-2">
-             <small>No photos uploaded yet</small>
-           </div>
-         )}
+            </div>
+         ))}
       </div>
     </motion.div>
   );
 };
 
+// --- Main PostAd Component ---
+
 const PostAd = () => {
   const navigate = useNavigate();
+  const { getAccessToken } = useAuthContext();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  
   const [formData, setFormData] = useState({
     title: '',
     category: 'boarding-house',
     price: '',
-    period: 'monthly',
     description: '',
     address: '',
     city: '',
-    images: [] 
+    province: 'Western',
+    imageFiles: []
   });
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
-  // Validation functions
-  const validateDetailsStep = () => {
-    const newErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    } else if (formData.title.trim().length < 5) {
-      newErrors.title = 'Title must be at least 5 characters';
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Category is required';
-    }
-
-    if (!formData.price) {
-      newErrors.price = 'Price is required';
-    } else if (parseInt(formData.price) <= 0) {
-      newErrors.price = 'Price must be greater than 0';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateLocationStep = () => {
-    const newErrors = {};
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    } else if (formData.address.trim().length < 5) {
-      newErrors.address = 'Address must be at least 5 characters';
-    }
-
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
-    } else if (formData.city.trim().length < 2) {
-      newErrors.city = 'City must be at least 2 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const nextStep = () => {
-    setCurrentStep(prev => prev + 1);
-  };
-  
-  const prevStep = () => {
-    setCurrentStep(prev => prev - 1);
-    setErrors({});
-  };
-
-  const handleNext = (e) => {
-    e.preventDefault();
-    
+  const validate = () => {
+    const err = {};
     if (currentStep === 1) {
-      if (validateDetailsStep()) {
-        nextStep();
-      }
+      if (!formData.title) err.title = "Title required";
+      if (!formData.price) err.price = "Price required";
+      if (!formData.description) err.description = "Description required";
     } else if (currentStep === 2) {
-      if (validateLocationStep()) {
-        nextStep();
-      }
-    } else {
-      nextStep();
+      if (!formData.address) err.address = "Address required";
+      if (!formData.city) err.city = "City / District required";
     }
+    setErrors(err);
+    return Object.keys(err).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.images.length === 0) {
-      alert("Please upload at least one photo before submitting.");
-      return;
+    if (formData.imageFiles.length === 0) return alert("Upload at least one image");
+    
+    setIsSubmitting(true);
+    try {
+      const token = await getAccessToken();
+      
+      const data = new FormData();
+      // Appending fields to match FastAPI backend (app/main.py)
+      data.append("title", formData.title);
+      data.append("description", formData.description);
+      data.append("price", formData.price);
+      data.append("address", formData.address);
+      data.append("province", formData.province);
+      data.append("district", formData.city);
+      data.append("type", formData.category);
+      data.append("beds", 1); // Defaulting as example
+      data.append("baths", 1); // Defaulting as example
+      data.append("facilities", JSON.stringify(["Wifi", "Parking"])); // Example static facilities
+
+      // Backend expects 'images' field name
+      formData.imageFiles.forEach((imgObj) => {
+        data.append("images", imgObj.file);
+      });
+
+      const response = await fetch("http://localhost:8001/ads", {
+        method: "POST",
+        headers: { 
+            "Authorization": `Bearer ${token}` 
+            // Note: browser sets Content-Type for FormData automatically
+        },
+        body: data
+      });
+
+      if (response.ok) {
+          alert("Ad posted successfully! It will appear once AI verification is complete.");
+          navigate('/dashboard');
+      } else {
+          const errorData = await response.json();
+          alert(`Failed to post ad: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      alert("Network error occurred.");
+    } finally {
+      setIsSubmitting(false);
     }
-    console.log("Submitting Ad:", formData);
-    // Simulate API call
-    setTimeout(() => {
-      alert("Ad submitted successfully!");
-      navigate('/dashboard');
-    }, 1000);
   };
 
   return (
     <div className="min-vh-100 bg-light py-5 mt-5">
       <div className="container">
         <div className="row justify-content-center">
-          <div className="col-lg-8 col-xl-7">
+          <div className="col-lg-8">
             
-            {/* Progress Bar */}
-            <div className="d-flex justify-content-between mb-4 px-2">
-              {[1, 2, 3].map((step) => (
-                <div key={step} className="d-flex flex-column align-items-center">
-                  <div 
-                    className={`rounded-circle d-flex align-items-center justify-content-center fw-bold transition-all ${
-                      currentStep >= step ? 'bg-success text-white' : 'bg-white text-muted border'
-                    }`}
-                    style={{ width: '40px', height: '40px' }}
-                  >
-                    {currentStep > step ? <CheckCircle size={20} /> : step}
+            {/* Steps Indicator */}
+            <div className="d-flex justify-content-between mb-5 px-5 text-center">
+              {[1, 2, 3].map(s => (
+                <div key={s} className={`fw-bold ${currentStep >= s ? 'text-success' : 'text-muted'}`}>
+                  <div className={`rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center border ${currentStep >= s ? 'bg-success text-white border-success' : 'bg-white'}`} style={{width: 35, height: 35}}>
+                    {currentStep > s ? <CheckCircle size={20}/> : s}
                   </div>
-                  <span className={`small mt-2 fw-bold ${currentStep >= step ? 'text-success' : 'text-muted'}`}>
-                    {step === 1 ? 'Details' : step === 2 ? 'Location' : 'Photos'}
-                  </span>
+                  <small>{s === 1 ? 'Info' : s === 2 ? 'Place' : 'Photos'}</small>
                 </div>
               ))}
             </div>
 
-            <div className="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div className="card shadow-lg border-0 rounded-4">
               <div className="card-body p-4 p-md-5">
-                
-                <form>
-                  <AnimatePresence mode='wait'>
-                    {currentStep === 1 && <DetailsStep key="step1" formData={formData} updateFormData={updateFormData} errors={errors} />}
-                    {currentStep === 2 && <LocationStep key="step2" formData={formData} updateFormData={updateFormData} errors={errors} />}
-                    {currentStep === 3 && <PhotosStep key="step3" formData={formData} updateFormData={updateFormData} />}
-                  </AnimatePresence>
+                <AnimatePresence mode='wait'>
+                  {currentStep === 1 && <DetailsStep key="s1" formData={formData} updateFormData={updateFormData} errors={errors} />}
+                  {currentStep === 2 && <LocationStep key="s2" formData={formData} updateFormData={updateFormData} errors={errors} />}
+                  {currentStep === 3 && <PhotosStep key="s3" formData={formData} updateFormData={updateFormData} />}
+                </AnimatePresence>
 
-                  <hr className="my-5 opacity-10" />
-
-                  <div className="d-flex justify-content-between align-items-center">
-                    {currentStep > 1 ? (
-                      <button 
-                        type="button" 
-                        onClick={prevStep}
-                        className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
-                      >
-                        <ChevronLeft size={18} className="me-1" /> Back
-                      </button>
-                    ) : (
-                      // Placeholder for alignment
-                      <div></div> 
-                    )}
-
-                    {currentStep < 3 ? (
-                      <button 
-                        type="button" 
-                        onClick={handleNext}
-                        className="btn btn-success rounded-pill px-5 py-3 fw-bold d-flex align-items-center shadow-sm"
-                        style={{ background: 'var(--primary-gradient)', border: 'none' }}
-                      >
-                        Next <ChevronRight size={18} className="ms-1" />
-                      </button>
-                    ) : (
-                      <button 
-                        type="button"
-                        onClick={handleSubmit}
-                        className="btn btn-success rounded-pill px-5 py-3 fw-bold d-flex align-items-center shadow-lg hover-scale"
-                        style={{ background: 'var(--primary-gradient)', border: 'none' }}
-                      >
-                         <Save size={18} className="me-2" /> Submit Ad
-                      </button>
-                    )}
-                  </div>
-                </form>
-
+                <div className="d-flex justify-content-between mt-5">
+                  {currentStep > 1 && (
+                    <button type="button" onClick={() => setCurrentStep(c => c - 1)} className="btn btn-light rounded-pill px-4">Back</button>
+                  )}
+                  {currentStep < 3 ? (
+                    <button type="button" onClick={() => validate() && setCurrentStep(c => c + 1)} className="btn btn-success ms-auto rounded-pill px-5">Next</button>
+                  ) : (
+                    <button type="button" disabled={isSubmitting} onClick={handleSubmit} className="btn btn-success ms-auto rounded-pill px-5">
+                      {isSubmitting ? "Submitting..." : "Post Ad"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

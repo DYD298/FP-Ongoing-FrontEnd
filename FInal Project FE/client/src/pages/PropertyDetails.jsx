@@ -1,160 +1,211 @@
-import React from "react";
-import { Container, Row, Col, Carousel, Card, Button } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
+import { Container, Row, Col, Carousel, Card, Button, Spinner, Badge } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { MapPin, Bed, Bath, Maximize, Sofa, CheckCircle, Phone, Mail, ShieldAlert, Clock, ImageOff } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 
 const PropertyDetails = () => {
     const { id } = useParams();
     const { t } = useLanguage();
+    
+    const [property, setProperty] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+
+    // Configuration - Pointing to your FastAPI Proxy
+    const API_BASE_URL = "http://localhost:8001";
+
+    useEffect(() => {
+        const fetchProperty = async () => {
+            setLoading(true);
+            try {
+                // 1. Fetch main property data
+                const response = await fetch(`${API_BASE_URL}/ads/${id}`);
+                
+                if (!response.ok) throw new Error("Property not found");
+                
+                const data = await response.json();
+                
+                // 2. Map image names to the Backend Proxy URL
+                // This matches your @app.get("/ads/image/{image_name}") endpoint
+                const proxyImages = data.images.map(imgName => {
+                    const cleanedName = imgName.startsWith('/') ? imgName.substring(1) : imgName;
+                    return `${API_BASE_URL}/ads/image/${cleanedName}`;
+                });
+
+                setProperty({
+                    ...data,
+                    displayImages: proxyImages,
+                    // Simple logic to extract a display name from email
+                    owner: { 
+                        name: data.owner_email ? data.owner_email.split('@')[0] : "Owner", 
+                        since: "2024" 
+                    } 
+                });
+            } catch (err) {
+                console.error("Failed to fetch property:", err);
+                setError(true);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProperty();
+    }, [id, API_BASE_URL]);
+
+    if (loading) return (
+        <div className="min-vh-100 d-flex justify-content-center align-items-center">
+            <Spinner animation="border" variant="success" />
+        </div>
+    );
+
+    if (error || !property) return (
+        <Container className="py-5 mt-5 text-center">
+            <ImageOff size={64} className="text-muted mb-3 opacity-25" />
+            <h2 className="text-muted">Property not found or is pending verification.</h2>
+            <Link to="/listings" className="btn btn-success mt-3 rounded-pill px-4">Back to Search</Link>
+        </Container>
+    );
 
     return (
-        <div style={{ paddingTop: "100px", paddingBottom: "50px" }}>
+        <div style={{ paddingTop: "100px", paddingBottom: "50px", background: "#fdfdfd" }}>
             <Container>
-                {/* Breadcrumb */}
+                {/* Status Badge */}
+                {property.status === "PENDING" && (
+                    <Badge bg="warning" className="mb-3 p-2 d-flex align-items-center gap-2 w-fit text-dark shadow-sm">
+                        <Clock size={16} /> {t('property.pendingVerification') || 'Under AI Review'}
+                    </Badge>
+                )}
+
                 <nav aria-label="breadcrumb" className="mb-4">
                     <ol className="breadcrumb">
-                        <li className="breadcrumb-item"><Link to="/">{t('property.breadcrumb.home')}</Link></li>
-                        <li className="breadcrumb-item"><Link to="/listings">{t('property.breadcrumb.find')}</Link></li>
-                        <li className="breadcrumb-item active" aria-current="page">Modern Apartment</li>
+                        <li className="breadcrumb-item"><Link to="/" className="text-decoration-none text-success">{t('property.breadcrumb.home') || 'Home'}</Link></li>
+                        <li className="breadcrumb-item"><Link to="/listings" className="text-decoration-none text-success">{t('property.breadcrumb.find') || 'Find'}</Link></li>
+                        <li className="breadcrumb-item active text-truncate" style={{maxWidth: '250px'}}>{property.title}</li>
                     </ol>
                 </nav>
 
                 <Row>
-                    {/* Property Images & Details */}
                     <Col lg={8}>
-                        {/* Image Gallery */}
-                        <motion.div
-                            className="mb-4 rounded-3 overflow-hidden shadow-sm"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.8 }}
-                        >
-                            <Carousel>
-                                <Carousel.Item>
-                                    <img
-                                        className="d-block w-100"
-                                        src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-                                        alt="Living Room"
-                                        style={{ height: "400px", objectFit: "cover" }}
-                                    />
-                                </Carousel.Item>
-                                <Carousel.Item>
-                                    <img
-                                        className="d-block w-100"
-                                        src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-                                        alt="Bedroom"
-                                        style={{ height: "400px", objectFit: "cover" }}
-                                    />
-                                </Carousel.Item>
-                                <Carousel.Item>
-                                    <img
-                                        className="d-block w-100"
-                                        src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"
-                                        alt="Kitchen"
-                                        style={{ height: "400px", objectFit: "cover" }}
-                                    />
-                                </Carousel.Item>
+                        {/* Image Gallery using Backend Proxy */}
+                        <motion.div className="mb-4 rounded-4 overflow-hidden shadow-sm bg-light" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <Carousel indicators={property.displayImages.length > 1} interval={5000} pause="hover">
+                                {property.displayImages.map((imgUrl, index) => (
+                                    <Carousel.Item key={index}>
+                                        <img 
+                                            className="d-block w-100" 
+                                            src={imgUrl} 
+                                            alt={`Property view ${index + 1}`} 
+                                            style={{ height: "500px", objectFit: "cover" }} 
+                                            onError={(e) => { 
+                                                e.target.onerror = null; 
+                                                e.target.src = "https://placehold.co/800x500?text=Image+Unavailable"; 
+                                            }}
+                                        />
+                                    </Carousel.Item>
+                                ))}
                             </Carousel>
                         </motion.div>
 
-                        {/* Title & Price */}
-                        <div className="d-flex justify-content-between align-items-start mb-3">
+                        {/* Title & Price Section */}
+                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4">
                             <div>
-                                <h1 className="h2 fw-bold">Modern Apartment in Colombo 03</h1>
-                                <p className="text-muted mb-0"><i className="fas fa-map-marker-alt me-2"></i> 45, Galle Road, Colombo 03</p>
+                                <h1 className="fw-bold text-dark h2 mb-2">{property.title}</h1>
+                                <p className="text-muted d-flex align-items-center gap-2 mb-0">
+                                    <MapPin size={18} className="text-success" /> {property.address}, {property.district}
+                                </p>
                             </div>
-                            <div className="text-end">
-                                <h3 className="text-success fw-bold mb-0">Rs. 25,000</h3>
-                                <small className="text-muted">{t('property.perMonth')}</small>
+                            <div className="text-md-end mt-3 mt-md-0">
+                                <h2 className="text-success fw-bold mb-0">Rs. {property.price.toLocaleString()}</h2>
+                                <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mt-1">
+                                    {t('property.perMonth') || '/ Month'}
+                                </span>
                             </div>
                         </div>
 
-                        <hr />
+                        <hr className="my-4 opacity-25" />
 
-                        {/* Key Features */}
-                        <Row className="text-center mb-4">
+                        {/* Property Specs Grid */}
+                        <Row className="g-3 mb-5">
                             {[
-                                { icon: "bed", label: "2 Beds" },
-                                { icon: "bath", label: "1 Bath" },
-                                { icon: "ruler-combined", label: "850 sqft" },
-                                { icon: "couch", label: "Furnished" }
+                                { icon: <Bed />, label: `${property.beds} ${t('property.beds') || 'Beds'}` },
+                                { icon: <Bath />, label: `${property.baths} ${t('property.baths') || 'Baths'}` },
+                                { icon: <Maximize />, label: property.type || 'Single Room' },
+                                { icon: <Sofa />, label: property.facilities?.includes("Furnished") ? "Furnished" : "Not Furnished" }
                             ].map((feat, idx) => (
-                                <Col xs={3} key={idx}>
-                                    <div className="p-3 bg-light rounded-3">
-                                        <i className={`fas fa-${feat.icon} fa-2x text-success mb-2`}></i>
-                                        <p className="mb-0 fw-bold">{feat.label}</p>
+                                <Col xs={6} md={3} key={idx}>
+                                    <div className="p-3 bg-white rounded-4 text-center border shadow-sm h-100">
+                                        <div className="text-success mb-2 d-flex justify-content-center">{feat.icon}</div>
+                                        <p className="mb-0 fw-bold small text-dark">{feat.label}</p>
                                     </div>
                                 </Col>
                             ))}
                         </Row>
 
                         {/* Description */}
-                        <h4 className="mb-3">{t('property.description')}</h4>
-                        <p className="text-muted mb-4">
-                            This beautiful modern apartment is located in the heart of Colombo 03, offering easy access to
-                            public transport, supermarkets, and restaurants. The apartment is fully furnished and features a
-                            spacious living area, a modern kitchen with appliances, and a comfortable bedroom with air
-                            conditioning. Perfect for students or working professionals looking for a convenient and safe
-                            place to stay.
+                        <h4 className="fw-bold mb-3">{t('property.description') || 'Description'}</h4>
+                        <p className="text-muted lh-lg mb-5" style={{ whiteSpace: 'pre-wrap', fontSize: '1.05rem' }}>
+                            {property.description}
                         </p>
 
-                        {/* Facilities */}
-                        <h4 className="mb-3">{t('property.facilities')}</h4>
-                        <Row className="mb-5">
-                            {["Air Conditioning", "Hot Water", "Washing Machine", "24/7 Security"].map((fac, idx) => (
-                                <Col md={4} className="mb-2" key={idx}>
-                                    <i className="fas fa-check text-success me-2"></i> {fac}
+                        {/* Facilities List */}
+                        <h4 className="fw-bold mb-3">{t('property.facilities') || 'Facilities'}</h4>
+                        <Row className="mb-5 g-3">
+                            {property.facilities?.map((fac, idx) => (
+                                <Col md={6} key={idx}>
+                                    <div className="d-flex align-items-center gap-3 p-2 rounded-3 hover-bg-light">
+                                        <CheckCircle size={20} className="text-success flex-shrink-0" />
+                                        <span className="text-secondary fw-medium">{fac}</span>
+                                    </div>
                                 </Col>
                             ))}
                         </Row>
                     </Col>
 
-                    {/* Sidebar Contact & Map */}
+                    {/* Right Sidebar: Contact & Safety */}
                     <Col lg={4}>
-                        <motion.div
-                            initial={{ opacity: 0, x: 50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.3 }}
-                            style={{ position: 'sticky', top: '100px', zIndex: 1 }}
-                        >
-                            {/* Location Map (Moved) */}
-                            <h5 className="mb-3">{t('property.location')}</h5>
-                            <div className="bg-light rounded-3 d-flex align-items-center justify-content-center overflow-hidden mb-4 shadow-sm" style={{ height: "300px" }}>
-                                <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.8497182996875!2d80.3548452745689!3d7.481841692530128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae33a22f7ef7d7d%3A0x1ea33b80e7201808!2sNational%20Institute%20of%20Business%20Management%20(NIBM)%20Kurunegala%20Centre!5e0!3m2!1sen!2ssg!4v1765206650214!5m2!1sen!2ssg"
-                                    width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"></iframe>
-                            </div>
-
-                            <Card className="shadow-sm border-0">
+                        <div style={{ position: 'sticky', top: '120px' }}>
+                            <Card className="shadow-lg border-0 rounded-4 mb-4 overflow-hidden">
                                 <Card.Body className="p-4">
-                                    <Card.Title className="mb-4">{t('property.contactOwner')}</Card.Title>
+                                    <h5 className="fw-bold mb-4">{t('property.contactOwner') || 'Contact Owner'}</h5>
                                     <div className="d-flex align-items-center mb-4">
-                                        <img src="https://ui-avatars.com/api/?name=John+Doe&background=random" className="rounded-circle me-3" width="60" alt="Owner" />
+                                        <img 
+                                            src={`https://ui-avatars.com/api/?name=${property.owner.name}&background=198754&color=fff&bold=true`} 
+                                            className="rounded-circle me-3 border shadow-sm" 
+                                            width="64" 
+                                            alt="Owner Avatar" 
+                                        />
                                         <div>
-                                            <h6 className="mb-0 fw-bold">John Doe</h6>
-                                            <small className="text-muted">{t('property.memberSince')} 2021</small>
+                                            <h6 className="mb-0 fw-bold fs-5">{property.owner.name}</h6>
+                                            <small className="text-muted">{t('property.memberSince') || 'Member since'} {property.owner.since}</small>
                                         </div>
                                     </div>
 
-                                    <div className="d-grid gap-2">
-                                        <Button variant="success"><i className="fas fa-phone-alt me-2"></i> {t('property.showPhone')}</Button>
-                                        <Button variant="outline-success"><i className="fas fa-envelope me-2"></i> {t('property.sendMessage')}</Button>
+                                    <div className="d-grid gap-3">
+                                        <Button variant="success" className="py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill border-0 shadow-sm transition-hover">
+                                            <Phone size={18} /> {t('property.showPhone') || 'Call Owner'}
+                                        </Button>
+                                        <Button variant="outline-success" className="py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill">
+                                            <Mail size={18} /> {t('property.sendMessage') || 'Email Owner'}
+                                        </Button>
                                     </div>
 
-                                    <hr className="my-4" />
-
-                                    <h6 className="mb-3">{t('property.safety')}</h6>
-                                    <ul className="text-muted small ps-3 mb-0">
-                                        <li>{t('property.safety1')}</li>
-                                        <li>{t('property.safety2')}</li>
-                                        <li>{t('property.safety3')}</li>
-                                    </ul>
+                                    {/* Safety Tips Section */}
+                                    <div className="mt-4 p-3 bg-light rounded-4 border-start border-success border-4 shadow-sm">
+                                        <div className="d-flex align-items-center gap-2 mb-2">
+                                            <ShieldAlert size={18} className="text-success" />
+                                            <h6 className="mb-0 fw-bold small text-uppercase tracking-wider">{t('property.safety') || 'Safety Tips'}</h6>
+                                        </div>
+                                        <ul className="text-muted ps-3 mb-0" style={{ fontSize: '0.85rem', lineHeight: '1.6' }}>
+                                            <li>Never send money via bank transfer before seeing the place.</li>
+                                            <li>Inspect the property and verify documents in person.</li>
+                                            <li>Always meet in a safe, public environment.</li>
+                                        </ul>
+                                    </div>
                                 </Card.Body>
                             </Card>
-                        </motion.div>
+                        </div>
                     </Col>
                 </Row>
             </Container>

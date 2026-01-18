@@ -38,6 +38,10 @@ const Navigation = () => {
     navigate('/profile');
   };
 
+  const handleSubmit = () =>{
+    navigate('/post-ad')
+  };
+
   return (
     <>
       {/* Top Bar */}
@@ -238,7 +242,11 @@ const Navigation = () => {
                       <i className="fas fa-user me-2"></i>My Profile
                     </Dropdown.Item>
                     <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleLogout} className="text-danger">
+                    <Dropdown.Item onClick={handleSubmit} className="text-success">
+                      <i className="fas fa-home me-2"></i>Post Ad
+                    </Dropdown.Item>
+                    <Dropdown.Divider />
+                     <Dropdown.Item onClick={handleLogout} className="text-danger">
                       <i className="fas fa-sign-out-alt me-2"></i>Logout
                     </Dropdown.Item>
                   </Dropdown.Menu>
