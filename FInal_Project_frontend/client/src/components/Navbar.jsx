@@ -7,19 +7,20 @@ import { useAuthContext } from "@asgardeo/auth-react";
 const Navigation = () => {
   const { state, signOut } = useAuthContext();
   const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
   const location = useLocation();
   const navigate = useNavigate();
   const { language, changeLanguage, t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 20);
     };
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -30,44 +31,44 @@ const Navigation = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
 
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    await signOut();
   };
 
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
+  const goToProfile = () => navigate("/profile");
+  const goToDashboard = () => navigate("/dashboard");
+  const goToPostAd = () => navigate("/post-ad");
+  const goToMyAds = () => navigate("/my-ads");
 
-  const handleSubmit = () =>{
-    navigate('/post-ad')
-  };
+  const isHome = location.pathname === "/";
+  const isListings = location.pathname === "/listings";
+  const isProfile = location.pathname === "/profile";
+  const isDashboard = location.pathname === "/dashboard";
+  const isMyAds = location.pathname === "/my-ads";
+  const isPostAd = location.pathname === "/post-ad";
 
   return (
     <>
-      {/* Top Bar */}
-      <div className="top-bar d-none d-lg-block">
+      <div className="top-bar-fixed d-none d-lg-block">
         <Container>
           <div className="top-bar-container">
             <div className="top-bar-left">
               <a href="tel:+94714959596">
-                <i className="fas fa-phone-alt"></i>+94 714 95 95 96
+                <i className="fas fa-phone-alt me-1"></i>
+                +94 714 95 95 96
               </a>
               <a href="mailto:info@ceylonstay.lk">
-                <i className="fas fa-envelope"></i>info@ceylonstay.lk
+                <i className="fas fa-envelope me-1"></i>
+                info@ceylonstay.lk
               </a>
             </div>
+
             <div className="top-bar-right social-links">
-              {/* Language Switcher (Desktop) */}
               <Dropdown className="me-2">
                 <Dropdown.Toggle
                   variant="link"
-                  id="dropdown-basic"
-                  className="p-0 text-decoration-none text-uppercase"
-                  style={{
-                    color: "inherit",
-                    fontSize: "0.85rem",
-                    fontWeight: "bold",
-                  }}
+                  id="language-dropdown"
+                  className="p-0 text-decoration-none text-uppercase nav-icon-btn"
                 >
                   {language}
                 </Dropdown.Toggle>
@@ -85,30 +86,26 @@ const Navigation = () => {
                 </Dropdown.Menu>
               </Dropdown>
 
-              {/* Theme Toggle Button (Desktop) */}
               <Button
                 variant="link"
-                className="p-0 text-decoration-none me-2"
+                className="p-0 text-decoration-none me-2 nav-icon-btn"
                 onClick={toggleTheme}
-                style={{ color: "inherit" }}
                 title={`Switch to ${theme === "light" ? "Dark" : "Light"} Mode`}
               >
-                <i
-                  className={`fas ${theme === "light" ? "fa-moon" : "fa-sun"}`}
-                ></i>
+                <i className={`fas ${theme === "light" ? "fa-moon" : "fa-sun"}`}></i>
               </Button>
 
               <div className="d-flex gap-2">
-                <a href="#">
+                <a href="#" className="nav-icon-btn">
                   <i className="fab fa-facebook-f"></i>
                 </a>
-                <a href="#">
+                <a href="#" className="nav-icon-btn">
                   <i className="fab fa-twitter"></i>
                 </a>
-                <a href="#">
+                <a href="#" className="nav-icon-btn">
                   <i className="fab fa-instagram"></i>
                 </a>
-                <a href="#">
+                <a href="#" className="nav-icon-btn">
                   <i className="fab fa-linkedin-in"></i>
                 </a>
               </div>
@@ -117,66 +114,66 @@ const Navigation = () => {
         </Container>
       </div>
 
-      {/* Navbar */}
       <Navbar
         expand="lg"
         fixed="top"
         variant={theme}
-        className={scrolled ? "shadow-sm" : ""}
-        style={{ top: scrolled ? 0 : "36px", transition: "all 0.3s" }}
+        className={`main-navbar ${scrolled ? "navbar-scrolled" : ""}`}
       >
         <Container>
-          <Navbar.Brand as={Link} to="/">
+          <Navbar.Brand as={Link} to="/" className="brand-logo">
             CEYLON STAY
           </Navbar.Brand>
+
           <Navbar.Toggle aria-controls="navbarScroll" />
+
           <Navbar.Collapse id="navbarScroll">
             <Nav className="ms-auto align-items-center">
-              <Nav.Link as={Link} to="/" active={location.pathname === "/"}>{t('nav.home')}</Nav.Link>
-              <Nav.Link
-                as={Link}
-                to="/listings"
-                active={location.pathname === "/listings"}
-              >
-                {t('nav.properties')}
+              <Nav.Link as={Link} to="/" active={isHome}>
+                {t("nav.home")}
               </Nav.Link>
-              {location.pathname !== '/listings' && (
+
+              <Nav.Link as={Link} to="/listings" active={isListings}>
+                {t("nav.properties")}
+              </Nav.Link>
+
+              {location.pathname !== "/listings" && (
                 <Nav.Link
                   href="#about"
                   onClick={(e) => {
                     if (location.pathname === "/") {
                       e.preventDefault();
-                      document
-                        .getElementById("about")
-                        ?.scrollIntoView({ behavior: "smooth" });
+                      document.getElementById("about")?.scrollIntoView({
+                        behavior: "smooth"
+                      });
                     }
                   }}
                 >
-                  {t('nav.about')}
+                  {t("nav.about")}
                 </Nav.Link>
               )}
+
               <Nav.Link
                 href="#contact"
                 onClick={(e) => {
                   if (location.pathname === "/") {
                     e.preventDefault();
-                    document
-                      .getElementById("contact")
-                      ?.scrollIntoView({ behavior: "smooth" });
+                    document.getElementById("contact")?.scrollIntoView({
+                      behavior: "smooth"
+                    });
                   }
                 }}
               >
-                {t('nav.contact')}
+                {t("nav.contact")}
               </Nav.Link>
 
-              {/* Mobile Language Switcher */}
               <Nav.Link className="d-lg-none">
                 <span
                   className="me-2"
                   onClick={() => changeLanguage("en")}
                   style={{
                     fontWeight: language === "en" ? "bold" : "normal",
-                    cursor: "pointer",
+                    cursor: "pointer"
                   }}
                 >
                   EN
@@ -187,7 +184,7 @@ const Navigation = () => {
                   onClick={() => changeLanguage("si")}
                   style={{
                     fontWeight: language === "si" ? "bold" : "normal",
-                    cursor: "pointer",
+                    cursor: "pointer"
                   }}
                 >
                   SI
@@ -198,65 +195,68 @@ const Navigation = () => {
                   onClick={() => changeLanguage("ta")}
                   style={{
                     fontWeight: language === "ta" ? "bold" : "normal",
-                    cursor: "pointer",
+                    cursor: "pointer"
                   }}
                 >
                   TA
                 </span>
               </Nav.Link>
 
-              {/* Theme Toggle Button (Mobile) */}
               <Nav.Link onClick={toggleTheme} className="d-lg-none">
-                <i
-                  className={`fas ${
-                    theme === "light" ? "fa-moon" : "fa-sun"
-                  } me-2`}
-                ></i>
+                <i className={`fas ${theme === "light" ? "fa-moon" : "fa-sun"} me-2`}></i>
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </Nav.Link>
 
-              {/* Auth / Profile Section */}
               {state.isAuthenticated ? (
                 <Dropdown align="end" className="ms-3">
                   <Dropdown.Toggle
                     variant="link"
-                    className="p-0 text-decoration-none"
+                    className="p-0 text-decoration-none profile-toggle"
                     id="profile-dropdown"
-                    style={{ color: "inherit", border: "none", cursor: "pointer" }}
                   >
-                    <div 
-                      className="rounded-circle d-flex align-items-center justify-content-center"
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        backgroundColor: "var(--primary-color)",
-                        color: "white"
-                      }}
-                    >
+                    <div className="profile-avatar">
                       <i className="fas fa-user fa-sm"></i>
                     </div>
                   </Dropdown.Toggle>
 
                   <Dropdown.Menu>
-                    <Dropdown.Item onClick={handleProfileClick}>
-                      <i className="fas fa-user me-2"></i>My Profile
+                    <Dropdown.Item onClick={goToDashboard} active={isDashboard}>
+                      <i className="fas fa-th-large me-2"></i>
+                      Dashboard
                     </Dropdown.Item>
-                    <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleSubmit} className="text-success">
-                      <i className="fas fa-home me-2"></i>Post Ad
+
+                    <Dropdown.Item onClick={goToProfile} active={isProfile}>
+                      <i className="fas fa-user me-2"></i>
+                      My Profile
                     </Dropdown.Item>
+
+                    <Dropdown.Item onClick={goToMyAds} active={isMyAds}>
+                      <i className="fas fa-list me-2"></i>
+                      My Ads
+                    </Dropdown.Item>
+
+                    <Dropdown.Item
+                      onClick={goToPostAd}
+                      active={isPostAd}
+                      className="text-success"
+                    >
+                      <i className="fas fa-home me-2"></i>
+                      Post Ad
+                    </Dropdown.Item>
+
                     <Dropdown.Divider />
-                     <Dropdown.Item onClick={handleLogout} className="text-danger">
-                      <i className="fas fa-sign-out-alt me-2"></i>Logout
+
+                    <Dropdown.Item onClick={handleLogout} className="text-danger">
+                      <i className="fas fa-sign-out-alt me-2"></i>
+                      Logout
                     </Dropdown.Item>
                   </Dropdown.Menu>
                 </Dropdown>
               ) : (
                 <Nav.Link
                   as={Link}
-                  to="/register"
-                  className="btn btn-success btn-sm ms-3 px-4 rounded-pill fw-bold"
-                  style={{ color: '#ffffff !important', background: 'var(--primary-gradient)', border: 'none', fontSize: '0.95rem' }}
+                  to="/login"
+                  className="btn btn-success btn-sm ms-3 px-4 rounded-pill fw-bold nav-post-btn"
                 >
                   {t("nav.postAd")}
                 </Nav.Link>

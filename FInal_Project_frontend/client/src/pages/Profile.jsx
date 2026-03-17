@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@asgardeo/auth-react";
 import {
@@ -18,23 +18,6 @@ import {
 
 const API_BASE =
   "https://a88642b8-2b68-4d73-b038-49eb67884ca4-prod.e1-us-east-azure.bijiraapis.dev/default/ceylonstay-user-service/v1.0";
-
-const BIJIRA_TOKEN =
-  "eyJ4NXQjUzI1NiI6IktWbUxKc2p3ZzIxNWlabmxEdnNPWkJXMWJSMFdkOVRka0R3ckVvSHVUSnMiLCJraWQiOiJhODg2NDJiOC0yYjY4LTRkNzMtYjAzOC00OWViNjc4ODRjYTQjNDk3MWM0YjMtNWM4ZC00YWIwLWEyMTEtYmRjMDAzMWVjNjczIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI0OG5yUU5DMU91TnRXNDZSZEVLRE9JdmgzTXhKIiwiYXVkIjoiNDhuclFOQzFPdU50VzQ2UmRFS0RPSXZoM014SiIsImF1dCI6IkFQUExJQ0FUSU9OIiwibmJmIjoxNzczMzg1NDA4LCJhenAiOiI0OG5yUU5DMU91TnRXNDZSZEVLRE9JdmgzTXhKIiwib3JnYW5pemF0aW9uIjp7InV1aWQiOiJhODg2NDJiOC0yYjY4LTRkNzMtYjAzOC00OWViNjc4ODRjYTQifSwic2NvcGUiOiIiLCJpc3MiOiJodHRwczovL2E4ODY0MmI4LTJiNjgtNGQ3My1iMDM4LTQ5ZWI2Nzg4NGNhNC1wcm9kLmUxLXVzLWVhc3QtYXp1cmUuY2hvcmVvc3RzLmRldi9vYXV0aDIvdG9rZW4iLCJleHAiOjE3NzM0MDcwMDgsImlhdCI6MTc3MzM4NTQwOCwianRpIjoiOWMzOGUwMTctMDY2Yy00MzhhLTkyZWUtNGRkZGY5NjA1NzFkIn0.q3hruL9cQ6MQbx6JZDlflTrxZi43vSFvo76SICKueMdwgrqlT1PfOmRnPpTZcdM_WJO2H-JHLYfN8biYuDCVOq9pctZuJm_tRKleofHg1qwj6jSZeOInZ_G03ddKQqvbsUuZwc8IbXHCjyYHIGhQPpywWkhAMaL174iatBQBFC6N2YEy5kqnt6pROTgJiI_U0W-gCu82QQsaZWFY3l2YCTAv5pIm38HXfIk7w5RADym9hWX7PHkwowYkomDqM5tnjne4siegAgcAIhYdVOQRZ1Wob6GHs-2q2QT4IQZAfock2T2_SGBq41yYWgFI9-EPJZqKy57M6N9dGUP9sbdz1g";
-
-
-const USER_EMAIL = "kushanherath59@gmail.com";
-
-const buildHeaders = (json = false) => {
-  const headers = {
-    Authorization: `Bearer ${BIJIRA_TOKEN}`,
-    "X-User-Email": USER_EMAIL,
-    Accept: "application/json"
-  };
-
-  if (json) headers["Content-Type"] = "application/json";
-  return headers;
-};
 
 const styles = {
   page: {
@@ -334,7 +317,8 @@ const InputField = ({
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { signOut } = useAuthContext();
+  const { state, signOut, getAccessToken } = useAuthContext();
+  const sessionEmail = state?.email || "";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -348,6 +332,27 @@ export default function Profile() {
   const [workingAction, setWorkingAction] = useState("");
   const [message, setMessage] = useState({ type: "", text: "" });
 
+  const buildHeaders = useCallback(async (json = false) => {
+    const accessToken = await getAccessToken();
+
+    if (!accessToken) {
+      throw new Error("No access token available. Please log in again.");
+    }
+
+    if (!sessionEmail) {
+      throw new Error("No user email found in the current session.");
+    }
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      "X-User-Email": sessionEmail,
+      Accept: "application/json"
+    };
+
+    if (json) headers["Content-Type"] = "application/json";
+    return headers;
+  }, [getAccessToken, sessionEmail]);
+
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => {
@@ -355,14 +360,14 @@ export default function Profile() {
     }, 4000);
   };
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true);
     setMessage({ type: "", text: "" });
 
     try {
       const res = await fetch(`${API_BASE}/profile`, {
         method: "GET",
-        headers: buildHeaders()
+        headers: await buildHeaders()
       });
 
       if (!res.ok) {
@@ -373,7 +378,7 @@ export default function Profile() {
 
       setFormData({
         name: data.name || "",
-        email: data.email || USER_EMAIL,
+        email: data.email || sessionEmail,
         phone: data.phone || "",
         address: data.address || "",
         description: data.description || ""
@@ -383,16 +388,16 @@ export default function Profile() {
       showMessage("error", "Unable to load profile details.");
       setFormData((prev) => ({
         ...prev,
-        email: USER_EMAIL
+        email: sessionEmail
       }));
     } finally {
       setLoading(false);
     }
-  };
+  }, [buildHeaders, sessionEmail]);
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
   const handleChange = (e) => {
     setFormData({
@@ -407,7 +412,7 @@ export default function Profile() {
     try {
       const res = await fetch(`${API_BASE}/profile`, {
         method: "PUT",
-        headers: buildHeaders(true),
+        headers: await buildHeaders(true),
         body: JSON.stringify({
           name: formData.name,
           phone: formData.phone,
@@ -437,7 +442,7 @@ export default function Profile() {
     try {
       const res = await fetch(`${API_BASE}/profile`, {
         method: "PATCH",
-        headers: buildHeaders(true),
+        headers: await buildHeaders(true),
         body: JSON.stringify({
           phone: formData.phone,
           address: formData.address
@@ -464,7 +469,7 @@ export default function Profile() {
     try {
       const res = await fetch(`${API_BASE}/account/deactivate`, {
         method: "POST",
-        headers: buildHeaders()
+        headers: await buildHeaders()
       });
 
       if (!res.ok) throw new Error("Deactivate failed");
@@ -487,7 +492,7 @@ export default function Profile() {
     try {
       const res = await fetch(`${API_BASE}/account`, {
         method: "DELETE",
-        headers: buildHeaders()
+        headers: await buildHeaders()
       });
 
       if (!res.ok) throw new Error("Delete failed");
@@ -559,7 +564,7 @@ export default function Profile() {
           <div style={styles.profileMeta}>
             <div style={styles.metaItem}>
               <Mail size={16} />
-              <span>{formData.email || USER_EMAIL}</span>
+              <span>{formData.email || sessionEmail}</span>
             </div>
 
             <div style={styles.metaItem}>

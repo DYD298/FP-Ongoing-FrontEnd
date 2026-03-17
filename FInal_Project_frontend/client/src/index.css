@@ -863,5 +863,134 @@ h6 {
   font-size: 0.9rem;
 }
 
+:root {
+  --topbar-height: 36px;
+  --navbar-height: 72px;
+}
+
+/* Page spacing so content does not hide under fixed header */
+.main-content {
+  padding-top: calc(var(--topbar-height) + var(--navbar-height));
+}
+
+/* Desktop top bar */
+.top-bar-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--topbar-height);
+  z-index: 1040;
+  background: #0f1720;
+  color: #dbe7f3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.top-bar-container {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.top-bar-left,
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.top-bar-left a,
+.top-bar-right a,
+.nav-icon-btn {
+  color: inherit !important;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.top-bar-left a:hover,
+.top-bar-right a:hover,
+.nav-icon-btn:hover {
+  opacity: 0.8;
+}
+
+/* Main navbar */
+.main-navbar {
+  top: var(--topbar-height);
+  min-height: var(--navbar-height);
+  z-index: 1030;
+  background: rgba(15, 23, 32, 0.92);
+  backdrop-filter: blur(10px);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-navbar.navbar-scrolled {
+  background: rgba(15, 23, 32, 0.98);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.main-navbar .navbar-brand,
+.main-navbar .nav-link {
+  color: #ffffff !important;
+}
+
+.main-navbar .nav-link {
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.main-navbar .nav-link:hover,
+.main-navbar .nav-link.active {
+  opacity: 1;
+  color: #5eead4 !important;
+}
+
+.brand-logo {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #5eead4 !important;
+}
+
+/* Profile button */
+.profile-toggle {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.profile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0ea5a4, #14b8a6);
+  color: #ffffff;
+}
+
+/* Guest CTA */
+.nav-post-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #10b981, #14b8a6) !important;
+  border: none !important;
+}
+
+/* Mobile */
+@media (max-width: 991.98px) {
+  :root {
+    --navbar-height: 64px;
+  }
+
+  .main-content {
+    padding-top: var(--navbar-height);
+  }
+
+  .main-navbar {
+    top: 0;
+    background: rgba(15, 23, 32, 0.98);
+  }
+}
+
 /* --- Animation Placeholders for React Framer Motion --- */
 /* (We will handle animations via Framer Motion, but keep CSS for compilation safety) */

@@ -22,13 +22,9 @@ import { useAuthContext } from "@asgardeo/auth-react";
 const API_BASE =
   "https://a88642b8-2b68-4d73-b038-49eb67884ca4-prod.e1-us-east-azure.bijiraapis.dev/default/ceylonstay-user-service/v1.0";
 
-// Testing only. Replace with a fresh valid token.
-const BIJIRA_TOKEN =
-  "eyJ4NXQjUzI1NiI6IktWbUxKc2p3ZzIxNWlabmxEdnNPWkJXMWJSMFdkOVRka0R3ckVvSHVUSnMiLCJraWQiOiJhODg2NDJiOC0yYjY4LTRkNzMtYjAzOC00OWViNjc4ODRjYTQjNDk3MWM0YjMtNWM4ZC00YWIwLWEyMTEtYmRjMDAzMWVjNjczIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI0OG5yUU5DMU91TnRXNDZSZEVLRE9JdmgzTXhKIiwiYXVkIjoiNDhuclFOQzFPdU50VzQ2UmRFS0RPSXZoM014SiIsImF1dCI6IkFQUExJQ0FUSU9OIiwibmJmIjoxNzczMzg1NDA4LCJhenAiOiI0OG5yUU5DMU91TnRXNDZSZEVLRE9JdmgzTXhKIiwib3JnYW5pemF0aW9uIjp7InV1aWQiOiJhODg2NDJiOC0yYjY4LTRkNzMtYjAzOC00OWViNjc4ODRjYTQifSwic2NvcGUiOiIiLCJpc3MiOiJodHRwczovL2E4ODY0MmI4LTJiNjgtNGQ3My1iMDM4LTQ5ZWI2Nzg4NGNhNC1wcm9kLmUxLXVzLWVhc3QtYXp1cmUuY2hvcmVvc3RzLmRldi9vYXV0aDIvdG9rZW4iLCJleHAiOjE3NzM0MDcwMDgsImlhdCI6MTc3MzM4NTQwOCwianRpIjoiOWMzOGUwMTctMDY2Yy00MzhhLTkyZWUtNGRkZGY5NjA1NzFkIn0.q3hruL9cQ6MQbx6JZDlflTrxZi43vSFvo76SICKueMdwgrqlT1PfOmRnPpTZcdM_WJO2H-JHLYfN8biYuDCVOq9pctZuJm_tRKleofHg1qwj6jSZeOInZ_G03ddKQqvbsUuZwc8IbXHCjyYHIGhQPpywWkhAMaL174iatBQBFC6N2YEy5kqnt6pROTgJiI_U0W-gCu82QQsaZWFY3l2YCTAv5pIm38HXfIk7w5RADym9hWX7PHkwowYkomDqM5tnjne4siegAgcAIhYdVOQRZ1Wob6GHs-2q2QT4IQZAfock2T2_SGBq41yYWgFI9-EPJZqKy57M6N9dGUP9sbdz1g";
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { state, signOut, signIn } = useAuthContext();
+  const { state, signOut, signIn, getAccessToken } = useAuthContext();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -63,10 +59,15 @@ const Dashboard = () => {
       }
 
       try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          throw new Error("No access token available. Please log in again.");
+        }
+
         const response = await fetch(`${API_BASE}/profile`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${BIJIRA_TOKEN}`,
+            Authorization: `Bearer ${accessToken}`,
             "X-User-Email": state.email,
             Accept: "application/json"
           }
@@ -107,7 +108,7 @@ const Dashboard = () => {
     };
 
     fetchProfileData();
-  }, [state.isAuthenticated, state.displayName, state.email]);
+  }, [getAccessToken, state.isAuthenticated, state.displayName, state.email]);
 
   const handleLogout = async () => {
     await signOut();
@@ -157,10 +158,16 @@ const Dashboard = () => {
   setIsSaving(true);
 
   try {
+    const accessToken = await getAccessToken();
+
+    if (!accessToken) {
+      throw new Error("No access token available. Please log in again.");
+    }
+
     const response = await fetch(`${API_BASE}/profile`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${BIJIRA_TOKEN}`,
+        Authorization: `Bearer ${accessToken}`,
         "X-User-Email": state.email,
         Accept: "application/json",
         "Content-Type": "application/json"

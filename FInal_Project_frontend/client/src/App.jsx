@@ -1,7 +1,13 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Outlet,
+  useLocation,
+  Navigate
+} from "react-router-dom";
 import { useAuthContext } from "@asgardeo/auth-react";
-
 
 import Navigation from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -13,18 +19,17 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import PostAd from "./pages/PostAd";
 import Profile from "./pages/Profile";
-
+import MyAds from "./pages/MyAds";
+import EditDraftAd from "./pages/EditDraftAd";
 
 const ProtectedRoute = ({ children }) => {
   const { state } = useAuthContext();
 
-  
   if (state.isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!state.isAuthenticated) {
-   
     return <Navigate to="/login" replace />;
   }
 
@@ -33,9 +38,11 @@ const ProtectedRoute = ({ children }) => {
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
   return null;
 };
 
@@ -55,44 +62,63 @@ const App = () => {
   return (
     <Router>
       <ScrollToTop />
+
       <Routes>
-        {/* Public Routes with Navbar/Footer */}
+        {/* Public + layout routes */}
         <Route element={<LayoutContainer />}>
           <Route path="/" element={<Home />} />
           <Route path="/listings" element={<Listings />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
-          
-          {/* Protected Routes inside Layout */}
-          <Route 
-            path="/profile" 
+
+          <Route
+            path="/profile"
             element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
-            } 
+            }
+          />
+
+          <Route
+            path="/my-ads"
+            element={
+              <ProtectedRoute>
+                <MyAds />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/ads/edit-draft/:adId"
+            element={
+              <ProtectedRoute>
+                <EditDraftAd />
+              </ProtectedRoute>
+            }
           />
         </Route>
 
-        {/* Auth Routes */}
+        {/* Auth routes */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected Routes without Layout (optional, or wrap in LayoutContainer if needed) */}
-        <Route 
-          path="/dashboard" 
+        {/* Protected routes without layout */}
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/post-ad" 
+
+        <Route
+          path="/post-ad"
           element={
             <ProtectedRoute>
               <PostAd />
             </ProtectedRoute>
-          } 
+          }
         />
       </Routes>
     </Router>
