@@ -1,13 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Navbar, Nav, Container, Button, Dropdown } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuthContext } from "@asgardeo/auth-react";
+import {
+  fetchNotifications,
+  markAllNotificationsRead
+} from "../api/notificationsApi";
 
 const Navigation = () => {
-  const { state, signOut } = useAuthContext();
+  const { state, signOut, getAccessToken } = useAuthContext();
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,6 +53,77 @@ const Navigation = () => {
   const isDashboard = location.pathname === "/dashboard";
   const isMyAds = location.pathname === "/my-ads";
   const isPostAd = location.pathname === "/post-ad";
+  const unreadCount = notifications.filter((item) => !item.is_read).length;
+
+  const loadNotifications = useCallback(async () => {
+    if (!state?.isAuthenticated || !state?.email) {
+      setNotifications([]);
+      return;
+    }
+
+    try {
+      setNotificationsLoading(true);
+      const accessToken = await getAccessToken();
+      if (!accessToken) return;
+
+      const data = await fetchNotifications(accessToken, state.email);
+      setNotifications(data);
+    } catch (error) {
+      console.error("Failed to load notifications:", error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [getAccessToken, state?.email, state?.isAuthenticated]);
+
+  useEffect(() => {
+    if (!state?.isAuthenticated || !state?.email) {
+      setNotifications([]);
+      return;
+    }
+
+    loadNotifications();
+    const intervalId = setInterval(loadNotifications, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [loadNotifications, state?.email, state?.isAuthenticated]);
+
+  const handleMarkAllNotificationsRead = async (e) => {
+    e.stopPropagation();
+
+    if (!state?.isAuthenticated || !state?.email || unreadCount === 0) {
+      return;
+    }
+
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) return;
+
+      await markAllNotificationsRead(accessToken, state.email);
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          is_read: true
+        }))
+      );
+    } catch (error) {
+      console.error("Failed to mark notifications as read:", error);
+    }
+  };
+
+  const handleNotificationClick = (notification) => {
+    if (notification?.ad_id) {
+      navigate(`/property/${notification.ad_id}`);
+    }
+  };
+
+  const formatNotificationTime = (createdAt) => {
+    if (!createdAt) return "";
+
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleString();
+  };
 
   return (
     <>
@@ -208,7 +286,73 @@ const Navigation = () => {
               </Nav.Link>
 
               {state.isAuthenticated ? (
-                <Dropdown align="end" className="ms-3">
+                <>
+                  <Dropdown
+                    align="end"
+                    className="ms-3"
+                    show={showNotifications}
+                    onToggle={(nextShow) => {
+                      setShowNotifications(nextShow);
+                      if (nextShow) {
+                        loadNotifications();
+                      }
+                    }}
+                  >
+                    <Dropdown.Toggle
+                      variant="link"
+                      className="p-0 text-decoration-none profile-toggle position-relative"
+                      id="notifications-dropdown"
+                    >
+                      <div className="profile-avatar">
+                        <i className="fas fa-bell fa-sm"></i>
+                      </div>
+                      {unreadCount > 0 && (
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      )}
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu align="end" style={{ minWidth: "320px" }}>
+                      <div className="d-flex justify-content-between align-items-center px-3 py-2">
+                        <span className="fw-bold">Notifications</span>
+                        <button
+                          type="button"
+                          className="btn btn-link btn-sm p-0 text-success text-decoration-none"
+                          onClick={handleMarkAllNotificationsRead}
+                          disabled={unreadCount === 0}
+                        >
+                          Mark all read
+                        </button>
+                      </div>
+                      <Dropdown.Divider />
+
+                      {notificationsLoading ? (
+                        <div className="px-3 py-3 text-muted small">Loading notifications...</div>
+                      ) : notifications.length === 0 ? (
+                        <div className="px-3 py-3 text-muted small">No notifications yet.</div>
+                      ) : (
+                        notifications.slice(0, 8).map((notification) => (
+                          <Dropdown.Item
+                            key={notification.id}
+                            className="py-2"
+                            onClick={() => handleNotificationClick(notification)}
+                          >
+                            <div className="d-flex flex-column">
+                              <span className={notification.is_read ? "text-muted" : "fw-semibold"}>
+                                {notification.message}
+                              </span>
+                              <small className="text-muted">
+                                {formatNotificationTime(notification.created_at)}
+                              </small>
+                            </div>
+                          </Dropdown.Item>
+                        ))
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
+
+                  <Dropdown align="end" className="ms-3">
                   <Dropdown.Toggle
                     variant="link"
                     className="p-0 text-decoration-none profile-toggle"
@@ -251,7 +395,8 @@ const Navigation = () => {
                       Logout
                     </Dropdown.Item>
                   </Dropdown.Menu>
-                </Dropdown>
+                  </Dropdown>
+                </>
               ) : (
                 <Nav.Link
                   as={Link}
