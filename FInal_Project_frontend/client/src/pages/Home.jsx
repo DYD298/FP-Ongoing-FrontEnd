@@ -16,7 +16,12 @@ import {
   Bath,
   Star
 } from "lucide-react";
-import { fetchActiveAds, getImageUrl, normalizeFacilities } from "../api/adsApi";
+import {
+  fetchActiveAds,
+  getImageUrl,
+  normalizeFacilities
+} from "../api/adsApi";
+import { fetchPublicAds } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const fadeInUp = {
@@ -83,13 +88,23 @@ const Home = () => {
       setFeaturedError("");
 
       try {
-        const token = state?.isAuthenticated ? await getAccessToken() : "";
-        setAccessToken(token || "");
-        const data = await fetchActiveAds(token);
-        setFeaturedProperties(Array.isArray(data) ? data.slice(0, 6) : []);
+        if (state?.isAuthenticated) {
+          const token = await getAccessToken();
+          setAccessToken(token || "");
+          const data = await fetchActiveAds(token);
+          setFeaturedProperties(Array.isArray(data) ? data.slice(0, 6) : []);
+        } else {
+          setAccessToken("");
+          const data = await fetchPublicAds({ limit: 6 });
+          setFeaturedProperties(Array.isArray(data?.items) ? data.items : []);
+        }
       } catch (err) {
         console.error("Failed to fetch featured ads:", err);
-        setFeaturedError(err.message || "Failed to fetch featured listings.");
+        if (!state?.isAuthenticated) {
+          setFeaturedError(err.message || "Failed to fetch public listings.");
+        } else {
+          setFeaturedError(err.message || "Failed to fetch featured listings.");
+        }
       } finally {
         setLoadingFeatured(false);
       }
@@ -435,7 +450,9 @@ const Home = () => {
                       <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                         <div style={{ height: "250px", position: "relative", background: "#eef2f7" }}>
                           <ProtectedImage
-                            imageUrl={getImageUrl(prop.images?.[0])}
+                            imageUrl={getImageUrl(prop.images?.[0], {
+                              usePublic: !state?.isAuthenticated
+                            })}
                             token={accessToken}
                             className="w-100 h-100 object-fit-cover"
                             alt={prop.title || "Property"}

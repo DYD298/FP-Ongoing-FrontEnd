@@ -17,7 +17,14 @@ import {
   getImageUrl,
   normalizeFacilities
 } from "../api/adsApi";
+import { searchPublicAds } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
+
+const toOptionalNumber = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
 
 const Listings = () => {
   const { state, getAccessToken } = useAuthContext();
@@ -26,6 +33,19 @@ const Listings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const queryString = searchParams.toString();
+  const queryFilters = useMemo(() => {
+    const params = new URLSearchParams(queryString);
+
+    return {
+      province: params.get("province") || "",
+      district: params.get("district") || "",
+      propertyType: params.get("propertyType") || "",
+      maxPrice: params.get("maxPrice") || "",
+      attachedBathroom: params.get("attachedBathroom") === "true",
+      kitchen: params.get("kitchen") === "true"
+    };
+  }, [queryString]);
 
   const [filters, setFilters] = useState({
     maxPrice: searchParams.get("maxPrice") || "",
@@ -39,44 +59,79 @@ const Listings = () => {
       setError("");
 
       try {
-        const token = state?.isAuthenticated ? await getAccessToken() : "";
-        setAccessToken(token || "");
-        const data = await fetchActiveAds(token);
-        setProperties(Array.isArray(data) ? data : []);
+        if (state?.isAuthenticated) {
+          const token = await getAccessToken();
+          setAccessToken(token || "");
+          const data = await fetchActiveAds(token);
+          setProperties(Array.isArray(data) ? data : []);
+        } else {
+          setAccessToken("");
+          const data = await searchPublicAds({
+            district: queryFilters.district || undefined,
+            type: queryFilters.propertyType || undefined,
+            max_price: toOptionalNumber(queryFilters.maxPrice)
+          });
+          setProperties(Array.isArray(data?.items) ? data.items : []);
+        }
       } catch (err) {
         console.error(err);
-        setError(err.message || "Failed to fetch listings");
+        if (!state?.isAuthenticated) {
+          setError(err.message || "Failed to fetch public listings.");
+        } else {
+          setError(err.message || "Failed to fetch listings");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadAds();
-  }, [getAccessToken, state?.isAuthenticated]);
+  }, [
+    getAccessToken,
+    queryFilters.district,
+    queryFilters.maxPrice,
+    queryFilters.propertyType,
+    state?.isAuthenticated
+  ]);
 
   const filteredProperties = useMemo(() => {
-    const maxPrice = searchParams.get("maxPrice");
-    const attachedBathroom = searchParams.get("attachedBathroom") === "true";
-    const kitchen = searchParams.get("kitchen") === "true";
+    const {
+      province,
+      district,
+      propertyType,
+      maxPrice,
+      attachedBathroom,
+      kitchen
+    } = queryFilters;
 
     return properties.filter((prop) => {
       const facilities = normalizeFacilities(prop.facilities);
+      const normalizedFacilities = facilities.map((item) => item.toLowerCase());
+      const districtValue = String(prop.district || "").toLowerCase();
+      const provinceValue = String(prop.province || "").toLowerCase();
+      const typeValue = String(prop.type || "").toLowerCase();
 
       if (maxPrice && Number(prop.price || 0) > Number(maxPrice)) return false;
-      if (attachedBathroom && !facilities.includes("Attached Bathroom")) return false;
-      if (kitchen && !facilities.includes("Kitchen")) return false;
+      if (district && districtValue !== district.toLowerCase()) return false;
+      if (province && provinceValue !== province.toLowerCase()) return false;
+      if (propertyType && typeValue !== propertyType.toLowerCase()) return false;
+      if (attachedBathroom && !normalizedFacilities.includes("attached bathroom")) return false;
+      if (kitchen && !normalizedFacilities.includes("kitchen")) return false;
 
       return true;
     });
-  }, [properties, searchParams]);
+  }, [properties, queryFilters]);
 
   const handleApplyFilters = (e) => {
     e.preventDefault();
 
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams);
     if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
+    else params.delete("maxPrice");
     if (filters.attachedBathroom) params.set("attachedBathroom", "true");
+    else params.delete("attachedBathroom");
     if (filters.kitchen) params.set("kitchen", "true");
+    else params.delete("kitchen");
 
     setSearchParams(params);
   };
@@ -201,7 +256,9 @@ const Listings = () => {
                       <Card className="h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                         <div style={{ height: "230px", background: "#eef2f7" }}>
                           <ProtectedImage
-                            imageUrl={getImageUrl(prop.images?.[0])}
+                            imageUrl={getImageUrl(prop.images?.[0], {
+                              usePublic: !state?.isAuthenticated
+                            })}
                             token={accessToken}
                             alt={prop.title || "Property"}
                             className="w-100 h-100 object-fit-cover"

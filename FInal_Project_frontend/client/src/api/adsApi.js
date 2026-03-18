@@ -1,5 +1,13 @@
 const BIJIRA_BASE_URL =
   "https://a88642b8-2b68-4d73-b038-49eb67884ca4-prod.e1-us-east-azure.bijiraapis.dev/default/ceylonstay-ads-service/v1.0";
+const PUBLIC_READ_BEARER_TOKEN = (import.meta.env.VITE_PUBLIC_READ_BEARER_TOKEN || "").trim();
+const RAW_PUBLIC_ADS_IMAGE_BASE_URL = (
+  import.meta.env.VITE_PUBLIC_ADS_IMAGE_BASE_URL || "http://100.72.161.91:32104/ads"
+).replace(/\/+$/, "");
+const PUBLIC_ADS_IMAGE_BASE_URL =
+  RAW_PUBLIC_ADS_IMAGE_BASE_URL.endsWith("/ads")
+    ? `${RAW_PUBLIC_ADS_IMAGE_BASE_URL}/image`
+    : RAW_PUBLIC_ADS_IMAGE_BASE_URL;
 
 export const getAuthHeaders = (accessToken, email, json = true) => {
   const headers = {
@@ -37,14 +45,31 @@ export const parseApiResponse = async (response) => {
   return data;
 };
 
-export const getImageUrl = (imageName) => {
+export const resolveReadAccessToken = (accessToken) => {
+  if (accessToken) return accessToken;
+  return PUBLIC_READ_BEARER_TOKEN;
+};
+
+const sanitizeImageName = (imageName) =>
+  String(imageName)
+    .replace("boarding-images/", "")
+    .replace(/^\/+/, "");
+
+export const getImageUrl = (imageName, options = {}) => {
   if (!imageName || imageName === "undefined") {
     return "https://placehold.co/800x500?text=No+Image";
   }
 
-  const cleaned = String(imageName)
-    .replace("boarding-images/", "")
-    .replace(/^\/+/, "");
+  const value = String(imageName);
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const cleaned = sanitizeImageName(value);
+
+  if (options.usePublic) {
+    return `${PUBLIC_ADS_IMAGE_BASE_URL}/${encodeURIComponent(cleaned)}`;
+  }
 
   return `${BIJIRA_BASE_URL}/ads/image/${encodeURIComponent(cleaned)}`;
 };
@@ -59,9 +84,10 @@ export const normalizeFacilities = (facilities) => {
 };
 
 export const fetchActiveAds = async (accessToken) => {
+  const readToken = resolveReadAccessToken(accessToken);
   const response = await fetch(`${BIJIRA_BASE_URL}/ads/active`, {
     method: "GET",
-    headers: getAuthHeaders(accessToken, null, false)
+    headers: getAuthHeaders(readToken, null, false)
   });
 
   return parseApiResponse(response);

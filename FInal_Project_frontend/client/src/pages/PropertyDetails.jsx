@@ -30,6 +30,7 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import Toast from "../components/Toast";
 import { fetchAdById, getImageUrl, normalizeFacilities } from "../api/adsApi";
+import { fetchPublicAdById } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const PropertyDetails = () => {
@@ -53,10 +54,17 @@ const PropertyDetails = () => {
       setError("");
 
       try {
-        const token = state?.isAuthenticated ? await getAccessToken() : "";
-        const email = state?.email || "";
-        setAccessToken(token || "");
-        const data = await fetchAdById(token, id, email);
+        let data = null;
+
+        if (state?.isAuthenticated) {
+          const token = await getAccessToken();
+          const email = state?.email || "";
+          setAccessToken(token || "");
+          data = await fetchAdById(token, id, email);
+        } else {
+          setAccessToken("");
+          data = await fetchPublicAdById(id);
+        }
 
         const facilities = normalizeFacilities(data?.facilities);
         const imageList = Array.isArray(data?.images) ? data.images : [];
@@ -72,7 +80,7 @@ const PropertyDetails = () => {
               : "Property Owner",
             since: "2024",
             phone: data?.phone || null,
-            email: data?.owner_email || ""
+            email: data?.owner_email || data?.user_email || ""
           }
         });
       } catch (err) {
@@ -218,7 +226,11 @@ const PropertyDetails = () => {
                   <Carousel.Item key={index}>
                     <ProtectedImage
                       className="d-block w-100"
-                      imageUrl={imageName ? getImageUrl(imageName) : null}
+                      imageUrl={
+                        imageName
+                          ? getImageUrl(imageName, { usePublic: !state?.isAuthenticated })
+                          : null
+                      }
                       token={accessToken}
                       alt={`Property view ${index + 1}`}
                       style={{ height: "500px", objectFit: "cover" }}

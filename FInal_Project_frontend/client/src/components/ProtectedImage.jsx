@@ -8,6 +8,7 @@ const ProtectedImage = ({
   alt = "Image",
   fallbackSrc = DEFAULT_FALLBACK,
   loading = "lazy",
+  onError,
   ...imgProps
 }) => {
   const [src, setSrc] = useState(fallbackSrc);
@@ -30,7 +31,8 @@ const ProtectedImage = ({
       }
 
       if (!token) {
-        setSrc(fallbackSrc);
+        // If the image endpoint is public, a direct URL works for guest users.
+        setSrc(imageUrl);
         return;
       }
 
@@ -68,7 +70,22 @@ const ProtectedImage = ({
     };
   }, [fallbackSrc, imageUrl, token]);
 
-  return <img src={src} alt={alt} loading={loading} {...imgProps} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading={loading}
+      onError={(event) => {
+        if (event.currentTarget.src !== fallbackSrc) {
+          event.currentTarget.src = fallbackSrc;
+        }
+        if (onError) {
+          onError(event);
+        }
+      }}
+      {...imgProps}
+    />
+  );
 };
 
 export default ProtectedImage;
