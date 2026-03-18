@@ -17,7 +17,6 @@ import {
   getImageUrl,
   normalizeFacilities
 } from "../api/adsApi";
-import { searchPublicAds } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const toOptionalNumber = (value) => {
@@ -25,6 +24,15 @@ const toOptionalNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 };
+
+const toOptionalInteger = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const normalizeType = (value) => normalizeText(value).replace(/[_\s]+/g, "-");
 
 const Listings = () => {
   const { state, getAccessToken } = useAuthContext();
@@ -38,10 +46,14 @@ const Listings = () => {
     const params = new URLSearchParams(queryString);
 
     return {
+      q: params.get("q") || "",
       province: params.get("province") || "",
       district: params.get("district") || "",
-      propertyType: params.get("propertyType") || "",
-      maxPrice: params.get("maxPrice") || "",
+      propertyType: params.get("propertyType") || params.get("type") || "",
+      minPrice: params.get("minPrice") || params.get("min_price") || "",
+      maxPrice: params.get("maxPrice") || params.get("max_price") || "",
+      beds: params.get("beds") || "",
+      baths: params.get("baths") || "",
       attachedBathroom: params.get("attachedBathroom") === "true",
       kitchen: params.get("kitchen") === "true"
     };
@@ -59,64 +71,74 @@ const Listings = () => {
       setError("");
 
       try {
-        if (state?.isAuthenticated) {
-          const token = await getAccessToken();
-          setAccessToken(token || "");
-          const data = await fetchActiveAds(token);
-          setProperties(Array.isArray(data) ? data : []);
-        } else {
-          setAccessToken("");
-          const data = await searchPublicAds({
-            district: queryFilters.district || undefined,
-            type: queryFilters.propertyType || undefined,
-            max_price: toOptionalNumber(queryFilters.maxPrice)
-          });
-          setProperties(Array.isArray(data?.items) ? data.items : []);
-        }
+        const token = state?.isAuthenticated ? await getAccessToken() : "";
+        setAccessToken(token || "");
+        const data = await fetchActiveAds(token);
+        setProperties(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
-        if (!state?.isAuthenticated) {
-          setError(err.message || "Failed to fetch public listings.");
-        } else {
-          setError(err.message || "Failed to fetch listings");
-        }
+        setError(err.message || "Failed to fetch listings");
       } finally {
         setLoading(false);
       }
     };
 
     loadAds();
-  }, [
-    getAccessToken,
-    queryFilters.district,
-    queryFilters.maxPrice,
-    queryFilters.propertyType,
-    state?.isAuthenticated
-  ]);
+  }, [getAccessToken, state?.isAuthenticated]);
 
   const filteredProperties = useMemo(() => {
     const {
+      q,
       province,
       district,
       propertyType,
+      minPrice,
       maxPrice,
+      beds,
+      baths,
       attachedBathroom,
       kitchen
     } = queryFilters;
 
     return properties.filter((prop) => {
       const facilities = normalizeFacilities(prop.facilities);
-      const normalizedFacilities = facilities.map((item) => item.toLowerCase());
-      const districtValue = String(prop.district || "").toLowerCase();
-      const provinceValue = String(prop.province || "").toLowerCase();
-      const typeValue = String(prop.type || "").toLowerCase();
+      const normalizedFacilities = facilities.map((item) => normalizeText(item));
+      const districtValue = normalizeText(prop.district);
+      const provinceValue = normalizeText(prop.province);
+      const typeValue = normalizeType(prop.type);
+      const titleValue = normalizeText(prop.title);
+      const descriptionValue = normalizeText(prop.description);
+      const addressValue = normalizeText(prop.address);
+      const adPrice = toOptionalNumber(prop.price);
+      const adBeds = toOptionalInteger(prop.beds);
+      const adBaths = toOptionalInteger(prop.baths);
+      const min = toOptionalNumber(minPrice);
+      const max = toOptionalNumber(maxPrice);
+      const bedsFilter = toOptionalInteger(beds);
+      const bathsFilter = toOptionalInteger(baths);
 
-      if (maxPrice && Number(prop.price || 0) > Number(maxPrice)) return false;
-      if (district && districtValue !== district.toLowerCase()) return false;
-      if (province && provinceValue !== province.toLowerCase()) return false;
-      if (propertyType && typeValue !== propertyType.toLowerCase()) return false;
-      if (attachedBathroom && !normalizedFacilities.includes("attached bathroom")) return false;
-      if (kitchen && !normalizedFacilities.includes("kitchen")) return false;
+      if (
+        q &&
+        !titleValue.includes(normalizeText(q)) &&
+        !descriptionValue.includes(normalizeText(q)) &&
+        !addressValue.includes(normalizeText(q))
+      ) {
+        return false;
+      }
+      if (district && !districtValue.includes(normalizeText(district))) return false;
+      if (province && !provinceValue.includes(normalizeText(province))) return false;
+      if (propertyType && typeValue !== normalizeType(propertyType)) return false;
+      if (min !== undefined && (adPrice === undefined || adPrice < min)) return false;
+      if (max !== undefined && (adPrice === undefined || adPrice > max)) return false;
+      if (bedsFilter !== undefined && adBeds !== bedsFilter) return false;
+      if (bathsFilter !== undefined && adBaths !== bathsFilter) return false;
+      if (
+        attachedBathroom &&
+        !normalizedFacilities.some((item) => item.includes("attached bathroom"))
+      ) {
+        return false;
+      }
+      if (kitchen && !normalizedFacilities.some((item) => item.includes("kitchen"))) return false;
 
       return true;
     });
@@ -256,9 +278,7 @@ const Listings = () => {
                       <Card className="h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                         <div style={{ height: "230px", background: "#eef2f7" }}>
                           <ProtectedImage
-                            imageUrl={getImageUrl(prop.images?.[0], {
-                              usePublic: !state?.isAuthenticated
-                            })}
+                            imageUrl={getImageUrl(prop.images?.[0])}
                             token={accessToken}
                             alt={prop.title || "Property"}
                             className="w-100 h-100 object-fit-cover"

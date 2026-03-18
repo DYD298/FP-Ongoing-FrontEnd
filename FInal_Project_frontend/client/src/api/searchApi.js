@@ -1,6 +1,16 @@
-const PUBLIC_SEARCH_BASE_URL = (
+const normalizeBaseUrl = (rawValue) => {
+  const cleaned = String(rawValue || "").replace(/\/+$/, "");
+  return cleaned.endsWith("/ads") ? cleaned.slice(0, -4) : cleaned;
+};
+
+const PUBLIC_SEARCH_BASE_URL = normalizeBaseUrl(
   import.meta.env.VITE_PUBLIC_SEARCH_BASE_URL || "http://100.72.161.91:30111"
-).replace(/\/+$/, "");
+);
+
+const AUTH_SEARCH_BASE_URL = normalizeBaseUrl(
+  import.meta.env.VITE_AUTH_SEARCH_BASE_URL ||
+    "https://a88642b8-2b68-4d73-b038-49eb67884ca4-dev.e1-us-east-azure.bijiraapis.dev/default/search-service/v1.0"
+);
 
 const parseSearchApiResponse = async (response) => {
   const text = await response.text();
@@ -28,6 +38,23 @@ const parseSearchApiResponse = async (response) => {
   }
 
   return data;
+};
+
+const isInvalidTokenError = (error) => {
+  if (!error || ![401, 403].includes(error.status)) return false;
+
+  const payloadText =
+    typeof error.payload === "string"
+      ? error.payload
+      : JSON.stringify(error.payload || {});
+
+  const combined = `${error.message || ""} ${payloadText}`.toLowerCase();
+
+  return (
+    combined.includes("invalid_token") ||
+    combined.includes("provided token is invalid") ||
+    combined.includes("invalid credentials")
+  );
 };
 
 const buildQueryString = (params = {}) => {
@@ -69,6 +96,39 @@ const requestPublic = async (path, params = {}) => {
   return parseSearchApiResponse(response);
 };
 
+const requestAuthorized = async (path, accessToken, params = {}) => {
+  const query = buildQueryString(params);
+  const url = `${AUTH_SEARCH_BASE_URL}${path}${query ? `?${query}` : ""}`;
+
+  const baseHeaders = {
+    Accept: "application/json"
+  };
+  const authHeaders = accessToken
+    ? {
+        ...baseHeaders,
+        Authorization: `Bearer ${accessToken}`
+      }
+    : baseHeaders;
+
+  const doFetch = async (headers) => {
+    const response = await fetch(url, {
+      method: "GET",
+      headers
+    });
+
+    return parseSearchApiResponse(response);
+  };
+
+  try {
+    return await doFetch(authHeaders);
+  } catch (error) {
+    if (accessToken && isInvalidTokenError(error)) {
+      return doFetch(baseHeaders);
+    }
+    throw error;
+  }
+};
+
 export const fetchPublicAds = async (params = {}) => {
   const data = await requestPublic("/ads", {
     skip: 0,
@@ -86,31 +146,60 @@ export const fetchPublicAdById = async (adId) => {
   return data || null;
 };
 
+export const fetchAuthorizedAds = async (accessToken, params = {}) => {
+  const query = {
+    skip: 0,
+    limit: 100,
+    only_active: true,
+    ...params
+  };
+
+  try {
+    const data = await requestAuthorized("/ads", accessToken, query);
+    return normalizeSearchResponse(data);
+  } catch (error) {
+    if (isInvalidTokenError(error)) {
+      return fetchPublicAds(query);
+    }
+    throw error;
+  }
+};
+
 const maybeNumber = (value) => {
   if (value === undefined || value === null || value === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const maybeInt = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+const normalizeType = (value) => normalizeText(value).replace(/[_\s]+/g, "-");
+
 const matchesFilter = (ad, params = {}) => {
-  const q = String(params.q || "").trim().toLowerCase();
-  const district = String(params.district || "").trim().toLowerCase();
-  const type = String(params.type || "").trim().toLowerCase();
+  const q = normalizeText(params.q);
+  const district = normalizeText(params.district);
+  const type = normalizeType(params.type);
   const minPrice = maybeNumber(params.min_price);
   const maxPrice = maybeNumber(params.max_price);
-  const beds = maybeNumber(params.beds);
-  const baths = maybeNumber(params.baths);
+  const beds = maybeInt(params.beds);
+  const baths = maybeInt(params.baths);
 
-  const title = String(ad?.title || "").toLowerCase();
-  const description = String(ad?.description || "").toLowerCase();
-  const adDistrict = String(ad?.district || "").toLowerCase();
-  const adType = String(ad?.type || "").toLowerCase();
+  const title = normalizeText(ad?.title);
+  const description = normalizeText(ad?.description);
+  const address = normalizeText(ad?.address);
+  const adDistrict = normalizeText(ad?.district);
+  const adType = normalizeType(ad?.type);
   const adPrice = maybeNumber(ad?.price);
-  const adBeds = maybeNumber(ad?.beds);
-  const adBaths = maybeNumber(ad?.baths);
+  const adBeds = maybeInt(ad?.beds);
+  const adBaths = maybeInt(ad?.baths);
 
-  if (q && !title.includes(q) && !description.includes(q)) return false;
-  if (district && adDistrict !== district) return false;
+  if (q && !title.includes(q) && !description.includes(q) && !address.includes(q)) return false;
+  if (district && !adDistrict.includes(district)) return false;
   if (type && adType !== type) return false;
   if (minPrice !== undefined && (adPrice === undefined || adPrice < minPrice)) return false;
   if (maxPrice !== undefined && (adPrice === undefined || adPrice > maxPrice)) return false;
@@ -138,6 +227,40 @@ export const searchPublicAds = async (params = {}) => {
 
     // Fallback for route-order issues where /ads/{ad_id} catches /ads/search.
     const fallback = await fetchPublicAds({
+      skip: query.skip,
+      limit: query.limit,
+      only_active: query.only_active
+    });
+    const items = fallback.items.filter((ad) => matchesFilter(ad, query));
+
+    return {
+      total: items.length,
+      items
+    };
+  }
+};
+
+export const searchAuthorizedAds = async (accessToken, params = {}) => {
+  const query = {
+    skip: 0,
+    limit: 100,
+    only_active: true,
+    ...params
+  };
+
+  try {
+    const data = await requestAuthorized("/ads/search", accessToken, query);
+    return normalizeSearchResponse(data);
+  } catch (error) {
+    if (isInvalidTokenError(error)) {
+      return searchPublicAds(query);
+    }
+
+    if (error?.status !== 422) {
+      throw error;
+    }
+
+    const fallback = await fetchAuthorizedAds(accessToken, {
       skip: query.skip,
       limit: query.limit,
       only_active: query.only_active

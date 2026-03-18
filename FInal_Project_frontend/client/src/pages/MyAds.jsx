@@ -15,6 +15,39 @@ import { useAuthContext } from "@asgardeo/auth-react";
 import { fetchMyAds, deleteAdById, getImageUrl } from "../api/adsApi";
 import ProtectedImage from "../components/ProtectedImage";
 
+const getStatusBadgeConfig = (ad) => {
+  const rawStatus = String(
+    ad?.status ?? (ad?.is_active === true ? "ACTIVE" : ad?.is_active === false ? "INACTIVE" : "")
+  )
+    .trim()
+    .toUpperCase();
+
+  if (rawStatus === "ACTIVE") {
+    return { label: "Active", bg: "success" };
+  }
+
+  if (rawStatus === "REJECTED") {
+    return { label: "Rejected", bg: "danger" };
+  }
+
+  if (rawStatus === "PENDING") {
+    return { label: "Pending", bg: "warning", text: "dark" };
+  }
+
+  if (rawStatus === "DRAFT") {
+    return { label: "Draft", bg: "secondary" };
+  }
+
+  if (rawStatus) {
+    return {
+      label: rawStatus.charAt(0) + rawStatus.slice(1).toLowerCase(),
+      bg: "secondary"
+    };
+  }
+
+  return { label: "Unknown", bg: "secondary" };
+};
+
 const MyAds = () => {
   const { state, getAccessToken } = useAuthContext();
   const [ads, setAds] = useState([]);
@@ -118,72 +151,83 @@ const MyAds = () => {
           </Card>
         ) : (
           <Row className="g-4">
-            {ads.map((ad, idx) => (
-              <Col md={6} xl={4} key={ad.id || idx}>
-                <motion.div
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="h-100"
-                >
-                  <Card className="h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div style={{ height: "220px", background: "#eef2f7" }}>
-                      <ProtectedImage
-                        imageUrl={getImageUrl(ad.images?.[0])}
-                        token={accessToken}
-                        alt={ad.title || "Ad"}
-                        className="w-100 h-100 object-fit-cover"
-                        fallbackSrc="https://placehold.co/800x500?text=No+Image"
-                      />
-                    </div>
+            {ads.map((ad, idx) => {
+              const statusBadge = getStatusBadgeConfig(ad);
 
-                    <Card.Body className="p-4 d-flex flex-column">
-                      <div className="d-flex justify-content-between gap-2 mb-2">
-                        <h5 className="fw-bold mb-0 text-truncate">{ad.title || "Untitled Ad"}</h5>
-                        <Badge bg="success" pill>
-                          Rs. {Number(ad.price || 0).toLocaleString()}
-                        </Badge>
+              return (
+                <Col md={6} xl={4} key={ad.id || idx}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="h-100"
+                  >
+                    <Card className="h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                      <div style={{ height: "220px", background: "#eef2f7" }}>
+                        <ProtectedImage
+                          imageUrl={getImageUrl(ad.images?.[0])}
+                          token={accessToken}
+                          alt={ad.title || "Ad"}
+                          className="w-100 h-100 object-fit-cover"
+                          fallbackSrc="https://placehold.co/800x500?text=No+Image"
+                        />
                       </div>
 
-                      <p className="text-muted small d-flex align-items-center gap-1 mb-3">
-                        <MapPin size={14} className="text-success" />
-                        {ad.district || "Unknown location"}
-                      </p>
+                      <Card.Body className="p-4 d-flex flex-column">
+                        <div className="d-flex justify-content-between gap-2 mb-2">
+                          <h5 className="fw-bold mb-0 text-truncate">
+                            {ad.title || "Untitled Ad"}
+                          </h5>
+                          <div className="d-flex flex-column align-items-end gap-2">
+                            <Badge bg="success" pill>
+                              Rs. {Number(ad.price || 0).toLocaleString()}
+                            </Badge>
+                            <Badge bg={statusBadge.bg} text={statusBadge.text} pill>
+                              {statusBadge.label}
+                            </Badge>
+                          </div>
+                        </div>
 
-                      <div className="d-flex gap-3 text-muted small mb-4">
-                        <span className="d-flex align-items-center gap-1">
-                          <Bed size={15} className="text-success" />
-                          {ad.beds ?? 0}
-                        </span>
-                        <span className="d-flex align-items-center gap-1">
-                          <Bath size={15} className="text-success" />
-                          {ad.baths ?? 0}
-                        </span>
-                      </div>
+                        <p className="text-muted small d-flex align-items-center gap-1 mb-3">
+                          <MapPin size={14} className="text-success" />
+                          {ad.district || "Unknown location"}
+                        </p>
 
-                      <div className="mt-auto d-grid gap-2">
-                        <Link
-                          to={`/ads/edit-draft/${ad.id}`}
-                          className="btn btn-outline-success rounded-pill fw-semibold"
-                        >
-                          <Pencil size={15} className="me-2" />
-                          Edit Draft
-                        </Link>
+                        <div className="d-flex gap-3 text-muted small mb-4">
+                          <span className="d-flex align-items-center gap-1">
+                            <Bed size={15} className="text-success" />
+                            {ad.beds ?? 0}
+                          </span>
+                          <span className="d-flex align-items-center gap-1">
+                            <Bath size={15} className="text-success" />
+                            {ad.baths ?? 0}
+                          </span>
+                        </div>
 
-                        <Button
-                          variant="outline-danger"
-                          className="rounded-pill fw-semibold"
-                          onClick={() => openDeleteModal(ad)}
-                        >
-                          <Trash2 size={15} className="me-2" />
-                          Delete Ad
-                        </Button>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </motion.div>
-              </Col>
-            ))}
+                        <div className="mt-auto d-grid gap-2">
+                          <Link
+                            to={`/ads/edit-draft/${ad.id}`}
+                            className="btn btn-outline-success rounded-pill fw-semibold"
+                          >
+                            <Pencil size={15} className="me-2" />
+                            Edit Draft
+                          </Link>
+
+                          <Button
+                            variant="outline-danger"
+                            className="rounded-pill fw-semibold"
+                            onClick={() => openDeleteModal(ad)}
+                          >
+                            <Trash2 size={15} className="me-2" />
+                            Delete Ad
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </motion.div>
+                </Col>
+              );
+            })}
           </Row>
         )}
 
