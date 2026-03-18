@@ -17,6 +17,7 @@ import {
   getImageUrl,
   normalizeFacilities
 } from "../api/adsApi";
+import { searchPublicAds } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const toOptionalNumber = (value) => {
@@ -60,10 +61,30 @@ const Listings = () => {
   }, [queryString]);
 
   const [filters, setFilters] = useState({
+    q: searchParams.get("q") || "",
+    district: searchParams.get("district") || "",
+    propertyType: searchParams.get("propertyType") || searchParams.get("type") || "",
+    minPrice: searchParams.get("minPrice") || searchParams.get("min_price") || "",
     maxPrice: searchParams.get("maxPrice") || "",
+    beds: searchParams.get("beds") || "",
+    baths: searchParams.get("baths") || "",
     attachedBathroom: searchParams.get("attachedBathroom") === "true",
     kitchen: searchParams.get("kitchen") === "true"
   });
+
+  useEffect(() => {
+    setFilters({
+      q: queryFilters.q,
+      district: queryFilters.district,
+      propertyType: queryFilters.propertyType,
+      minPrice: queryFilters.minPrice,
+      maxPrice: queryFilters.maxPrice,
+      beds: queryFilters.beds,
+      baths: queryFilters.baths,
+      attachedBathroom: queryFilters.attachedBathroom,
+      kitchen: queryFilters.kitchen
+    });
+  }, [queryFilters]);
 
   useEffect(() => {
     const loadAds = async () => {
@@ -71,10 +92,27 @@ const Listings = () => {
       setError("");
 
       try {
-        const token = state?.isAuthenticated ? await getAccessToken() : "";
-        setAccessToken(token || "");
-        const data = await fetchActiveAds(token);
-        setProperties(Array.isArray(data) ? data : []);
+        if (state?.isAuthenticated) {
+          const token = await getAccessToken();
+          setAccessToken(token || "");
+          const data = await fetchActiveAds(token);
+          setProperties(Array.isArray(data) ? data : []);
+        } else {
+          setAccessToken("");
+          const data = await searchPublicAds({
+            q: queryFilters.q || undefined,
+            district: queryFilters.district || undefined,
+            type: queryFilters.propertyType || undefined,
+            min_price: toOptionalNumber(queryFilters.minPrice),
+            max_price: toOptionalNumber(queryFilters.maxPrice),
+            beds: toOptionalInteger(queryFilters.beds),
+            baths: toOptionalInteger(queryFilters.baths),
+            skip: 0,
+            limit: 100,
+            only_active: true
+          });
+          setProperties(Array.isArray(data?.items) ? data.items : []);
+        }
       } catch (err) {
         console.error(err);
         setError(err.message || "Failed to fetch listings");
@@ -84,7 +122,17 @@ const Listings = () => {
     };
 
     loadAds();
-  }, [getAccessToken, state?.isAuthenticated]);
+  }, [
+    getAccessToken,
+    queryFilters.baths,
+    queryFilters.beds,
+    queryFilters.district,
+    queryFilters.maxPrice,
+    queryFilters.minPrice,
+    queryFilters.propertyType,
+    queryFilters.q,
+    state?.isAuthenticated
+  ]);
 
   const filteredProperties = useMemo(() => {
     const {
@@ -148,8 +196,20 @@ const Listings = () => {
     e.preventDefault();
 
     const params = new URLSearchParams(searchParams);
+    if (filters.q) params.set("q", filters.q);
+    else params.delete("q");
+    if (filters.district) params.set("district", filters.district);
+    else params.delete("district");
+    if (filters.propertyType) params.set("propertyType", filters.propertyType);
+    else params.delete("propertyType");
+    if (filters.minPrice) params.set("minPrice", filters.minPrice);
+    else params.delete("minPrice");
     if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
     else params.delete("maxPrice");
+    if (filters.beds) params.set("beds", filters.beds);
+    else params.delete("beds");
+    if (filters.baths) params.set("baths", filters.baths);
+    else params.delete("baths");
     if (filters.attachedBathroom) params.set("attachedBathroom", "true");
     else params.delete("attachedBathroom");
     if (filters.kitchen) params.set("kitchen", "true");
@@ -160,7 +220,13 @@ const Listings = () => {
 
   const handleReset = () => {
     setFilters({
+      q: "",
+      district: "",
+      propertyType: "",
+      minPrice: "",
       maxPrice: "",
+      beds: "",
+      baths: "",
       attachedBathroom: false,
       kitchen: false
     });
@@ -188,6 +254,64 @@ const Listings = () => {
 
                 <Form onSubmit={handleApplyFilters}>
                   <Form.Group className="mb-3">
+                    <Form.Label className="small fw-semibold text-muted">Keyword</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={filters.q}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, q: e.target.value }))
+                      }
+                      placeholder="room, near campus..."
+                      className="rounded-3"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-semibold text-muted">District</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={filters.district}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, district: e.target.value }))
+                      }
+                      placeholder="Kandy"
+                      className="rounded-3"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-semibold text-muted">Property Type</Form.Label>
+                    <Form.Select
+                      value={filters.propertyType}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, propertyType: e.target.value }))
+                      }
+                      className="rounded-3"
+                    >
+                      <option value="">All</option>
+                      <option value="room">Room</option>
+                      <option value="annex">Annex</option>
+                      <option value="apartment">Apartment</option>
+                      <option value="house">House</option>
+                    </Form.Select>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-semibold text-muted">
+                      Min Price (LKR)
+                    </Form.Label>
+                    <Form.Control
+                      type="number"
+                      value={filters.minPrice}
+                      onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, minPrice: e.target.value }))
+                      }
+                      placeholder="10000"
+                      className="rounded-3"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
                     <Form.Label className="small fw-semibold text-muted">
                       Max Price (LKR)
                     </Form.Label>
@@ -201,6 +325,35 @@ const Listings = () => {
                       className="rounded-3"
                     />
                   </Form.Group>
+
+                  <Row className="g-2 mb-3">
+                    <Col xs={6}>
+                      <Form.Label className="small fw-semibold text-muted">Beds</Form.Label>
+                      <Form.Control
+                        type="number"
+                        min="0"
+                        value={filters.beds}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, beds: e.target.value }))
+                        }
+                        placeholder="1"
+                        className="rounded-3"
+                      />
+                    </Col>
+                    <Col xs={6}>
+                      <Form.Label className="small fw-semibold text-muted">Baths</Form.Label>
+                      <Form.Control
+                        type="number"
+                        min="0"
+                        value={filters.baths}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, baths: e.target.value }))
+                        }
+                        placeholder="1"
+                        className="rounded-3"
+                      />
+                    </Col>
+                  </Row>
 
                   <Form.Group className="mb-3">
                     <Form.Check
@@ -278,7 +431,9 @@ const Listings = () => {
                       <Card className="h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                         <div style={{ height: "230px", background: "#eef2f7" }}>
                           <ProtectedImage
-                            imageUrl={getImageUrl(prop.images?.[0])}
+                            imageUrl={getImageUrl(prop.images?.[0], {
+                              usePublic: !state?.isAuthenticated
+                            })}
                             token={accessToken}
                             alt={prop.title || "Property"}
                             className="w-100 h-100 object-fit-cover"

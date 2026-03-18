@@ -21,6 +21,7 @@ import {
   getImageUrl,
   normalizeFacilities
 } from "../api/adsApi";
+import { fetchPublicAds } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const fadeInUp = {
@@ -87,10 +88,16 @@ const Home = () => {
       setFeaturedError("");
 
       try {
-        const token = state?.isAuthenticated ? await getAccessToken() : "";
-        setAccessToken(token || "");
-        const data = await fetchActiveAds(token);
-        setFeaturedProperties(Array.isArray(data) ? data.slice(0, 6) : []);
+        if (state?.isAuthenticated) {
+          const token = await getAccessToken();
+          setAccessToken(token || "");
+          const data = await fetchActiveAds(token);
+          setFeaturedProperties(Array.isArray(data) ? data.slice(0, 6) : []);
+        } else {
+          setAccessToken("");
+          const data = await fetchPublicAds({ limit: 6, only_active: true });
+          setFeaturedProperties(Array.isArray(data?.items) ? data.items : []);
+        }
       } catch (err) {
         console.error("Failed to fetch featured ads:", err);
         setFeaturedError(err.message || "Failed to fetch featured listings.");
@@ -439,7 +446,9 @@ const Home = () => {
                       <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
                         <div style={{ height: "250px", position: "relative", background: "#eef2f7" }}>
                           <ProtectedImage
-                            imageUrl={getImageUrl(prop.images?.[0])}
+                            imageUrl={getImageUrl(prop.images?.[0], {
+                              usePublic: !state?.isAuthenticated
+                            })}
                             token={accessToken}
                             className="w-100 h-100 object-fit-cover"
                             alt={prop.title || "Property"}

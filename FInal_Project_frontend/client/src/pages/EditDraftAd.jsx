@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Container, Row, Col, Card, Form, Button, Spinner, Badge } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { Save, Send, ArrowLeft, MapPinHouse } from "lucide-react";
+import { Save, Send, ArrowLeft, MapPinHouse, X } from "lucide-react";
 import { useAuthContext } from "@asgardeo/auth-react";
 import {
   fetchAdById,
@@ -106,7 +106,8 @@ const EditDraftAd = () => {
       formData.district &&
       formData.type &&
       formData.beds !== "" &&
-      formData.baths !== ""
+      formData.baths !== "" &&
+      formData.images.length > 0
     );
   }, [formData]);
 
@@ -126,6 +127,14 @@ const EditDraftAd = () => {
     }));
   };
 
+  const removeExistingImage = (indexToRemove) => {
+    setSuccess("");
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
   const handleSaveDraft = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -138,7 +147,8 @@ const EditDraftAd = () => {
         ...formData,
         price: formData.price === "" ? null : Number(formData.price),
         beds: formData.beds === "" ? null : Number(formData.beds),
-        baths: formData.baths === "" ? null : Number(formData.baths)
+        baths: formData.baths === "" ? null : Number(formData.baths),
+        images: formData.images
       });
 
       setSuccess("Draft updated successfully.");
@@ -157,7 +167,21 @@ const EditDraftAd = () => {
 
     try {
       const { accessToken, email } = await getSessionAuth();
+
+      if (!formData.images.length) {
+        throw new Error("Add at least one image before publishing.");
+      }
+
+      await updateDraftAd(accessToken, adId, email, {
+        ...formData,
+        price: formData.price === "" ? null : Number(formData.price),
+        beds: formData.beds === "" ? null : Number(formData.beds),
+        baths: formData.baths === "" ? null : Number(formData.baths),
+        images: formData.images
+      });
+
       await publishDraftAd(accessToken, adId, email);
+
       setSuccess("Draft published successfully.");
 
       setTimeout(() => {
@@ -336,6 +360,33 @@ const EditDraftAd = () => {
                         })}
                       </div>
                     </Col>
+
+                    {formData.images.length > 0 && (
+                      <Col md={12}>
+                        <div className="small text-muted mb-2">Existing Draft Images</div>
+                        <div className="d-flex flex-wrap gap-2">
+                          {formData.images.map((imageName, index) => (
+                            <div
+                              key={`${imageName}-${index}`}
+                              className="d-flex align-items-center gap-2 border rounded-3 px-2 py-1 bg-light"
+                            >
+                              <span className="small text-truncate" style={{ maxWidth: "280px" }}>
+                                {String(imageName)}
+                              </span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline-danger"
+                                className="rounded-pill px-2 py-0"
+                                onClick={() => removeExistingImage(index)}
+                              >
+                                <X size={12} />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </Col>
+                    )}
 
                     <Col md={12}>
                       <div className="d-flex flex-wrap gap-2 mt-2">

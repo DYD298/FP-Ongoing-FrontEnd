@@ -7,6 +7,7 @@ import {
   fetchNotifications,
   markAllNotificationsRead
 } from "../api/notificationsApi";
+import { clearRoleAccessCache, resolveRoleAccess } from "../api/roleAccessApi";
 
 const Navigation = () => {
   const { state, signOut, getAccessToken } = useAuthContext();
@@ -15,6 +16,7 @@ const Navigation = () => {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [roleAccess, setRoleAccess] = useState({ isAdmin: false, isSuperAdmin: false });
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,21 +41,59 @@ const Navigation = () => {
   };
 
   const handleLogout = async () => {
+    clearRoleAccessCache();
     await signOut();
   };
 
-  const goToProfile = () => navigate("/profile");
   const goToDashboard = () => navigate("/dashboard");
+  const goToAdmin = () => navigate("/admin");
+  const goToSuperAdmin = () => navigate("/super-admin");
   const goToPostAd = () => navigate("/post-ad");
   const goToMyAds = () => navigate("/my-ads");
 
   const isHome = location.pathname === "/";
   const isListings = location.pathname === "/listings";
-  const isProfile = location.pathname === "/profile";
   const isDashboard = location.pathname === "/dashboard";
+  const isAdmin = location.pathname.startsWith("/admin");
+  const isSuperAdmin = location.pathname.startsWith("/super-admin");
   const isMyAds = location.pathname === "/my-ads";
   const isPostAd = location.pathname === "/post-ad";
   const unreadCount = notifications.filter((item) => !item.is_read).length;
+  const canAccessSuperAdmin = roleAccess.isSuperAdmin;
+  const canAccessAdmin = roleAccess.isAdmin || roleAccess.isSuperAdmin;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRoleAccess = async () => {
+      if (!state?.isAuthenticated) {
+        if (isMounted) {
+          setRoleAccess({ isAdmin: false, isSuperAdmin: false });
+        }
+        return;
+      }
+
+      try {
+        const accessToken = await getAccessToken();
+        const email = state?.email || state?.username || "";
+        const data = await resolveRoleAccess(accessToken, email);
+
+        if (isMounted) {
+          setRoleAccess(data);
+        }
+      } catch {
+        if (isMounted) {
+          setRoleAccess({ isAdmin: false, isSuperAdmin: false });
+        }
+      }
+    };
+
+    loadRoleAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [getAccessToken, state?.email, state?.isAuthenticated, state?.username]);
 
   const loadNotifications = useCallback(async () => {
     if (!state?.isAuthenticated || !state?.email) {
@@ -369,10 +409,19 @@ const Navigation = () => {
                       Dashboard
                     </Dropdown.Item>
 
-                    <Dropdown.Item onClick={goToProfile} active={isProfile}>
-                      <i className="fas fa-user me-2"></i>
-                      My Profile
-                    </Dropdown.Item>
+                    {canAccessAdmin && (
+                      <Dropdown.Item onClick={goToAdmin} active={isAdmin}>
+                        <i className="fas fa-user-cog me-2"></i>
+                        Admin
+                      </Dropdown.Item>
+                    )}
+
+                    {canAccessSuperAdmin && (
+                      <Dropdown.Item onClick={goToSuperAdmin} active={isSuperAdmin}>
+                        <i className="fas fa-user-shield me-2"></i>
+                        Super Admin
+                      </Dropdown.Item>
+                    )}
 
                     <Dropdown.Item onClick={goToMyAds} active={isMyAds}>
                       <i className="fas fa-list me-2"></i>

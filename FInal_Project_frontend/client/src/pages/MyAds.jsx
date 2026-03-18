@@ -6,10 +6,11 @@ import {
   MapPin,
   Bed,
   Bath,
-  Pencil,
+  RefreshCw,
   Trash2,
   FileText,
-  PlusCircle
+  PlusCircle,
+  Pencil
 } from "lucide-react";
 import { useAuthContext } from "@asgardeo/auth-react";
 import { fetchMyAds, deleteAdById, getImageUrl } from "../api/adsApi";
@@ -17,7 +18,7 @@ import ProtectedImage from "../components/ProtectedImage";
 
 const getStatusBadgeConfig = (ad) => {
   const rawStatus = String(
-    ad?.status ?? (ad?.is_active === true ? "ACTIVE" : ad?.is_active === false ? "INACTIVE" : "")
+    ad?.status ?? (ad?.is_active === true ? "ACTIVE" : ad?.is_active === false ? "DRAFT" : "")
   )
     .trim()
     .toUpperCase();

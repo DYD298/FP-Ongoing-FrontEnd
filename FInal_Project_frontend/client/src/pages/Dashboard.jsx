@@ -1,30 +1,332 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useAuthContext } from "@asgardeo/auth-react";
 import {
   User,
-  LogOut,
   Mail,
   Phone,
   MapPin,
   FileText,
-  Save,
   Loader2,
+  Save,
+  RefreshCw,
+  ArrowLeft,
+  UserX,
+  Trash2,
   ShieldCheck,
-  Home,
-  PlusCircle,
-  AlertCircle,
-  CheckCircle2
+  SaveAll
 } from "lucide-react";
-import { useAuthContext } from "@asgardeo/auth-react";
-
+import { fetchMyAds, deleteAdById } from "../api/adsApi";
 
 const API_BASE =
   "https://a88642b8-2b68-4d73-b038-49eb67884ca4-prod.e1-us-east-azure.bijiraapis.dev/default/ceylonstay-user-service/v1.0";
 
-const Dashboard = () => {
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "linear-gradient(135deg, #f8fafc 0%, #eef2ff 40%, #f5f3ff 100%)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "32px 16px",
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+  },
+  wrapper: {
+    width: "100%",
+    maxWidth: "980px",
+    display: "grid",
+    gridTemplateColumns: "1fr 1.4fr",
+    gap: "24px"
+  },
+  sidebarCard: {
+    background: "rgba(255,255,255,0.85)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255,255,255,0.7)",
+    borderRadius: "24px",
+    padding: "28px",
+    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)"
+  },
+  mainCard: {
+    background: "rgba(255,255,255,0.92)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.8)",
+    borderRadius: "24px",
+    padding: "30px",
+    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)"
+  },
+  avatar: {
+    width: "84px",
+    height: "84px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, #46904d, #3cdf67)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    marginBottom: "18px",
+    boxShadow: "0 12px 30px rgba(79, 70, 229, 0.25)"
+  },
+  heading: {
+    fontSize: "28px",
+    fontWeight: 800,
+    color: "#0f172a",
+    margin: 0
+  },
+  subheading: {
+    fontSize: "14px",
+    color: "#64748b",
+    marginTop: "8px",
+    lineHeight: 1.6
+  },
+  sectionTitle: {
+    fontSize: "16px",
+    fontWeight: 700,
+    color: "#1e293b",
+    marginBottom: "14px"
+  },
+  profileMeta: {
+    marginTop: "22px",
+    display: "grid",
+    gap: "12px"
+  },
+  metaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    color: "#475569",
+    fontSize: "14px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    padding: "12px 14px",
+    borderRadius: "14px"
+  },
+  formGrid: {
+    display: "grid",
+    gap: "18px"
+  },
+  inputGroup: {
+    display: "grid",
+    gap: "8px"
+  },
+  label: {
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#334155"
+  },
+  inputWrapper: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    background: "#ffffff",
+    border: "1px solid #dbeafe",
+    borderRadius: "16px",
+    padding: "14px 16px",
+    boxShadow: "0 4px 14px rgba(15, 23, 42, 0.04)"
+  },
+  icon: {
+    color: "#3e7e33",
+    flexShrink: 0
+  },
+  input: {
+    width: "100%",
+    border: "none",
+    outline: "none",
+    fontSize: "15px",
+    color: "#0f172a",
+    background: "transparent"
+  },
+  textareaWrapper: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "12px",
+    background: "#ffffff",
+    border: "1px solid #dbeafe",
+    borderRadius: "16px",
+    padding: "14px 16px",
+    boxShadow: "0 4px 14px rgba(15, 23, 42, 0.04)"
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "110px",
+    border: "none",
+    outline: "none",
+    fontSize: "15px",
+    color: "#0f172a",
+    resize: "vertical",
+    background: "transparent",
+    fontFamily: "inherit"
+  },
+  bannerSuccess: {
+    background: "#ecfdf5",
+    border: "1px solid #a7f3d0",
+    color: "#065f46",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    fontSize: "14px",
+    marginBottom: "18px"
+  },
+  bannerError: {
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    color: "#991b1b",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    fontSize: "14px",
+    marginBottom: "18px"
+  },
+  topBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "16px",
+    marginBottom: "24px"
+  },
+  topBarLeft: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px"
+  },
+  topBarActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    flexWrap: "wrap"
+  },
+  formTitle: {
+    fontSize: "26px",
+    fontWeight: 800,
+    color: "#0f172a",
+    margin: 0
+  },
+  formSubtitle: {
+    fontSize: "14px",
+    color: "#64748b",
+    margin: 0
+  },
+  buttonRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "12px",
+    marginTop: "10px"
+  },
+  primaryButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "13px 18px",
+    borderRadius: "14px",
+    border: "none",
+    cursor: "pointer",
+    background: "linear-gradient(135deg, #0d6116, #3fa539)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: "14px",
+    boxShadow: "0 12px 24px rgba(79, 70, 229, 0.22)"
+  },
+  secondaryButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "13px 18px",
+    borderRadius: "14px",
+    border: "1px solid #cbd5e1",
+    cursor: "pointer",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 700,
+    fontSize: "14px"
+  },
+  warningButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "13px 18px",
+    borderRadius: "14px",
+    border: "none",
+    cursor: "pointer",
+    background: "#fff7ed",
+    color: "#c2410c",
+    fontWeight: 700,
+    fontSize: "14px"
+  },
+  dangerButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "13px 18px",
+    borderRadius: "14px",
+    border: "none",
+    cursor: "pointer",
+    background: "#fef2f2",
+    color: "#b91c1c",
+    fontWeight: 700,
+    fontSize: "14px"
+  },
+  disabled: {
+    opacity: 0.6,
+    cursor: "not-allowed"
+  },
+  actionSection: {
+    marginTop: "26px",
+    paddingTop: "22px",
+    borderTop: "1px solid #e2e8f0"
+  },
+  loadingBox: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background:
+      "linear-gradient(135deg, #f8fafc 0%, #eef2ff 40%, #f5f3ff 100%)",
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+  },
+  loadingCard: {
+    background: "#ffffff",
+    padding: "30px 34px",
+    borderRadius: "24px",
+    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.08)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "14px"
+  },
+  spinner: {
+    animation: "spin 1s linear infinite"
+  }
+};
+
+const InputField = ({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  icon,
+  readOnly = false
+}) => (
+  <div style={styles.inputGroup}>
+    <label style={styles.label}>{label}</label>
+    <div style={styles.inputWrapper}>
+      <div style={styles.icon}>{icon}</div>
+      <input
+        style={styles.input}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        readOnly={readOnly}
+      />
+    </div>
+  </div>
+);
+
+export default function Dashboard() {
   const navigate = useNavigate();
-  const { state, signOut, signIn, getAccessToken } = useAuthContext();
+  const { state, signOut, getAccessToken } = useAuthContext();
+  const sessionEmail = state?.email || "";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -34,739 +336,571 @@ const Dashboard = () => {
     description: ""
   });
 
-  const [errors, setErrors] = useState({});
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [banner, setBanner] = useState({ type: "", message: "" });
+  const [loading, setLoading] = useState(true);
+  const [workingAction, setWorkingAction] = useState("");
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!state.isAuthenticated) {
-        setIsInitialLoading(false);
-        return;
-      }
-
-      if (!state.email) {
-        setFormData({
-          name: state.displayName || "",
-          email: "",
-          phone: "",
-          address: "",
-          description: ""
-        });
-        setIsInitialLoading(false);
-        return;
-      }
-
-      try {
-        const accessToken = await getAccessToken();
-        if (!accessToken) {
-          throw new Error("No access token available. Please log in again.");
-        }
-
-        const response = await fetch(`${API_BASE}/profile`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "X-User-Email": state.email,
-            Accept: "application/json"
-          }
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Failed to fetch profile: ${response.status} ${text}`);
-        }
-
-        const data = await response.json();
-
-        setFormData({
-          name: data.name || state.displayName || "",
-          email: data.email || state.email || "",
-          phone: data.phone || "",
-          address: data.address || "",
-          description: data.description || ""
-        });
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-
-        setFormData({
-          name: state.displayName || "",
-          email: state.email || "",
-          phone: "",
-          address: "",
-          description: ""
-        });
-
-        setBanner({
-          type: "error",
-          message: "Could not load profile from server. Showing basic account info."
-        });
-      } finally {
-        setIsInitialLoading(false);
-      }
-    };
-
-    fetchProfileData();
-  }, [getAccessToken, state.isAuthenticated, state.displayName, state.email]);
-
-  const handleLogout = async () => {
-    await signOut();
-  };
-
-  const handleLogin = async () => {
-    await signIn();
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: null
-      }));
-    }
-
-    if (banner.message) {
-      setBanner({ type: "", message: "" });
-    }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-    const phoneRegex = /^\+?[\d\s-]{10,}$/;
-
-    if (formData.phone && !phoneRegex.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
- const handleSave = async (e) => {
-  e.preventDefault();
-
-  if (!validate()) return;
-
-  setIsSaving(true);
-
-  try {
+  const getSessionCredentials = useCallback(async () => {
     const accessToken = await getAccessToken();
 
     if (!accessToken) {
       throw new Error("No access token available. Please log in again.");
     }
 
-    const response = await fetch(`${API_BASE}/profile`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-User-Email": state.email,
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address,
-        description: formData.description
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Update failed");
+    if (!sessionEmail) {
+      throw new Error("No user email found in the current session.");
     }
 
-    setBanner({
-      type: "success",
-      message: "Profile updated successfully."
-    });
+    return { accessToken, email: sessionEmail };
+  }, [getAccessToken, sessionEmail]);
 
-   
+  const buildHeaders = useCallback(async (json = false) => {
+    const { accessToken, email } = await getSessionCredentials();
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      "X-User-Email": email,
+      Accept: "application/json"
+    };
+
+    if (json) headers["Content-Type"] = "application/json";
+    return headers;
+  }, [getSessionCredentials]);
+
+  const deleteAllPostedAds = useCallback(async () => {
+    const result = {
+      totalCount: 0,
+      deletedCount: 0,
+      failedCount: 0,
+      failedAdIds: [],
+      warning: ""
+    };
+
+    const isIgnorableDeleteError = (error) => {
+      const text = String(error?.message || "").toLowerCase();
+      return text.includes("404") || text.includes("not found") || text.includes("already deleted");
+    };
+
+    try {
+      const { accessToken, email } = await getSessionCredentials();
+      const ads = await fetchMyAds(accessToken, email);
+
+      if (!Array.isArray(ads) || ads.length === 0) {
+        return result;
+      }
+
+      result.totalCount = ads.length;
+
+      for (const ad of ads) {
+        if (!ad?.id) continue;
+
+        let deleted = false;
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          try {
+            await deleteAdById(accessToken, ad.id, email);
+            deleted = true;
+            break;
+          } catch (error) {
+            lastError = error;
+
+            if (isIgnorableDeleteError(error)) {
+              deleted = true;
+              break;
+            }
+
+            if (attempt === 1) {
+              await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+          }
+        }
+
+        if (deleted) {
+          result.deletedCount += 1;
+        } else {
+          console.error(`Failed to delete ad ${ad.id}:`, lastError);
+          result.failedAdIds.push(ad.id);
+        }
+      }
+
+      result.failedCount = result.failedAdIds.length;
+      return result;
+    } catch (error) {
+      console.error("Could not complete ad cleanup before account action:", error);
+      result.warning = error?.message || "Could not verify ad cleanup.";
+      return result;
+    }
+  }, [getSessionCredentials]);
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
     setTimeout(() => {
-      navigate("/");
-    }, 1000);
+      setMessage({ type: "", text: "" });
+    }, 4000);
+  };
 
-  } catch (err) {
-    setBanner({
-      type: "error",
-      message: err.message
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      const res = await fetch(`${API_BASE}/profile`, {
+        method: "GET",
+        headers: await buildHeaders()
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch profile: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      setFormData({
+        name: data.name || "",
+        email: data.email || sessionEmail,
+        phone: data.phone || "",
+        address: data.address || "",
+        description: data.description || ""
+      });
+    } catch (err) {
+      console.error(err);
+      showMessage("error", "Unable to load profile details.");
+      setFormData((prev) => ({
+        ...prev,
+        email: sessionEmail
+      }));
+    } finally {
+      setLoading(false);
+    }
+  }, [buildHeaders, sessionEmail]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
     });
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
 
-  if (state.isLoading || isInitialLoading) {
+  const updateProfile = async () => {
+    setWorkingAction("put");
+
+    try {
+      const res = await fetch(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: await buildHeaders(true),
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          description: formData.description
+        })
+      });
+
+      if (!res.ok) throw new Error("Update failed");
+
+      showMessage("success", "Profile updated successfully.");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      showMessage("error", "Profile update failed.");
+    } finally {
+      setWorkingAction("");
+    }
+  };
+
+  const patchProfile = async () => {
+    setWorkingAction("patch");
+
+    try {
+      const res = await fetch(`${API_BASE}/profile`, {
+        method: "PATCH",
+        headers: await buildHeaders(true),
+        body: JSON.stringify({
+          phone: formData.phone,
+          address: formData.address
+        })
+      });
+
+      if (!res.ok) throw new Error("update failed");
+
+      showMessage("success", "Selected fields updated successfully.");
+    } catch (err) {
+      console.error(err);
+      showMessage("error", "update request failed.");
+    } finally {
+      setWorkingAction("");
+    }
+  };
+
+  const deactivateAccount = async () => {
+    const confirmed = window.confirm("Deactivate account?");
+    if (!confirmed) return;
+
+    setWorkingAction("deactivate");
+
+    try {
+      const cleanup = await deleteAllPostedAds();
+      const res = await fetch(`${API_BASE}/account/deactivate`, {
+        method: "POST",
+        headers: await buildHeaders()
+      });
+
+      if (!res.ok) throw new Error("Deactivate failed");
+
+      let successMessage = "Account deactivated successfully.";
+
+      if (cleanup.totalCount > 0) {
+        successMessage = `Account deactivated. Deleted ${cleanup.deletedCount}/${cleanup.totalCount} posted ads.`;
+      }
+
+      if (cleanup.failedCount > 0) {
+        successMessage += ` ${cleanup.failedCount} ad(s) could not be deleted automatically.`;
+      }
+
+      if (cleanup.warning) {
+        successMessage += ` Cleanup warning: ${cleanup.warning}`;
+      }
+
+      showMessage(
+        "success",
+        successMessage
+      );
+    } catch (err) {
+      console.error(err);
+      showMessage("error", err.message || "Failed to deactivate account.");
+    } finally {
+      setWorkingAction("");
+    }
+  };
+
+  const deleteAccount = async () => {
+    const confirmed = window.confirm("Delete account permanently?");
+    if (!confirmed) return;
+
+    setWorkingAction("delete");
+
+    try {
+      const cleanup = await deleteAllPostedAds();
+      const res = await fetch(`${API_BASE}/account`, {
+        method: "DELETE",
+        headers: await buildHeaders()
+      });
+
+      if (!res.ok) throw new Error("Delete failed");
+
+      let successMessage = "Account deleted successfully.";
+
+      if (cleanup.totalCount > 0) {
+        successMessage = `Account deleted. Removed ${cleanup.deletedCount}/${cleanup.totalCount} posted ads.`;
+      }
+
+      if (cleanup.failedCount > 0) {
+        successMessage += ` ${cleanup.failedCount} ad(s) could not be deleted automatically.`;
+      }
+
+      if (cleanup.warning) {
+        successMessage += ` Cleanup warning: ${cleanup.warning}`;
+      }
+
+      showMessage(
+        "success",
+        successMessage
+      );
+
+      setTimeout(async () => {
+        await signOut();
+        navigate("/");
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      showMessage("error", err.message || "Failed to delete account.");
+    } finally {
+      setWorkingAction("");
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center dashboard-bg">
-        <div className="glass-loader text-center p-4 rounded-4 shadow-lg">
-          <Loader2 className="spin text-success mb-3" size={42} />
-          <h5 className="fw-bold mb-1">Loading your profile</h5>
-          <p className="text-muted mb-0">Please wait a moment...</p>
+      <div style={styles.loadingBox}>
+        <div style={styles.loadingCard}>
+          <Loader2 size={38} style={styles.spinner} />
+          <div style={{ fontWeight: 700, color: "#0f172a" }}>
+            Loading profile...
+          </div>
+          <div style={{ color: "#64748b", fontSize: "14px" }}>
+            Please wait while we fetch your details
+          </div>
         </div>
 
         <style>{`
-          .dashboard-bg {
-            background:
-              radial-gradient(circle at top left, rgba(25,135,84,0.10), transparent 35%),
-              radial-gradient(circle at bottom right, rgba(32,201,151,0.12), transparent 30%),
-              linear-gradient(135deg, #f8fafc 0%, #eefaf4 100%);
-          }
-          .glass-loader {
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.7);
-          }
-          .spin {
-            animation: spin 1s linear infinite;
-          }
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-        `}</style>
-      </div>
-    );
-  }
 
-  if (!state.isAuthenticated) {
-    return (
-      <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center dashboard-bg px-3">
-        <div className="card border-0 shadow-lg rounded-4 p-4 p-md-5 text-center" style={{ maxWidth: "420px", width: "100%" }}>
-          <div
-            className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-            style={{
-              width: "72px",
-              height: "72px",
-              background: "linear-gradient(135deg, #198754, #20c997)",
-              color: "#fff"
-            }}
-          >
-            <User size={30} />
-          </div>
-          <h2 className="fw-bold mb-2">Welcome back</h2>
-          <p className="text-muted mb-4">Sign in to manage your profile and account details.</p>
-          <button
-            className="btn btn-success btn-lg rounded-pill px-4 fw-semibold"
-            onClick={handleLogin}
-            style={{ background: "linear-gradient(135deg, #198754, #20c997)", border: "none" }}
-          >
-            Login with Google
-          </button>
-        </div>
+          @media (max-width: 860px) {
+            .profile-layout {
+              grid-template-columns: 1fr !important;
+            }
+          }
 
-        <style>{`
-          .dashboard-bg {
-            background:
-              radial-gradient(circle at top left, rgba(25,135,84,0.10), transparent 35%),
-              radial-gradient(circle at bottom right, rgba(32,201,151,0.12), transparent 30%),
-              linear-gradient(135deg, #f8fafc 0%, #eefaf4 100%);
+          input::placeholder,
+          textarea::placeholder {
+            color: #94a3b8;
           }
         `}</style>
       </div>
     );
   }
 
+  const isBusy = workingAction !== "";
+
   return (
-    <div className="min-vh-100 dashboard-bg py-5 px-2">
-      <div className="container py-3">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="row justify-content-center"
-        >
-          <div className="col-12 col-xl-10">
-            <div className="card border-0 shadow-lg rounded-5 overflow-hidden dashboard-card">
-              <div className="profile-hero position-relative">
-                <div className="hero-overlay"></div>
+    <div style={styles.page}>
+      <div className="profile-layout" style={styles.wrapper}>
+        <div style={styles.sidebarCard}>
+          <div style={styles.avatar}>
+            <User size={36} />
+          </div>
 
-                <div className="position-relative z-2 p-4 p-md-5">
-                  <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-4">
-                    <div className="d-flex align-items-center gap-4 flex-wrap">
-                      <div className="profile-avatar shadow-lg">
-                        {state.picture ? (
-                          <img
-                            src={state.picture}
-                            alt="Profile"
-                            className="w-100 h-100 object-fit-cover"
-                          />
-                        ) : (
-                          <User size={60} className="text-secondary opacity-50" />
-                        )}
-                      </div>
+          <h1 style={styles.heading}>{formData.name || "Profile Account"}</h1>
+          <p style={styles.subheading}>
+            Manage your personal profile information, contact details, and
+            account settings from one place.
+          </p>
 
-                      <div className="text-white">
-                        <div className="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill hero-badge mb-3">
-                          <ShieldCheck size={16} />
-                          <span className="fw-semibold small">Verified Account</span>
-                        </div>
+          <div style={styles.profileMeta}>
+            <div style={styles.metaItem}>
+              <Mail size={16} />
+              <span>{formData.email || sessionEmail}</span>
+            </div>
 
-                        <h2 className="fw-bold mb-1">{formData.name || "User"}</h2>
-                        <p className="mb-2 text-white-50">{formData.email}</p>
+            <div style={styles.metaItem}>
+              <Phone size={16} />
+              <span>{formData.phone || "No phone added"}</span>
+            </div>
 
-                        <div className="d-flex flex-wrap gap-2 mt-2">
-                          <span className="mini-chip">
-                            <Mail size={14} /> Account Email
-                          </span>
-                          <span className="mini-chip">
-                            <Phone size={14} /> Personal Details
-                          </span>
-                          <span className="mini-chip">
-                            <MapPin size={14} /> Address Info
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+            <div style={styles.metaItem}>
+              <MapPin size={16} />
+              <span>{formData.address || "No address added"}</span>
+            </div>
 
-                    <div className="d-flex flex-wrap gap-2">
-                      <button
-                        onClick={() => navigate("/listings")}
-                        className="btn btn-light rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm"
-                      >
-                        <Home size={18} />
-                        View Listings
-                      </button>
+            <div style={styles.metaItem}>
+              <ShieldCheck size={16} />
+              <span>Secure account management</span>
+            </div>
+          </div>
+        </div>
 
-                      <button
-                        onClick={() => navigate("/post-ad")}
-                        className="btn rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm text-white hero-action-btn"
-                      >
-                        <PlusCircle size={18} />
-                        Post New Ad
-                      </button>
+        <div style={styles.mainCard}>
+          <div style={styles.topBar}>
+            <div style={styles.topBarLeft}>
+              <h2 style={styles.formTitle}>Edit Profile</h2>
+              <p style={styles.formSubtitle}>
+                Keep your account information accurate and up to date.
+              </p>
+            </div>
 
-                      <button
-                        onClick={handleLogout}
-                        className="btn btn-outline-light rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2"
-                      >
-                        <LogOut size={18} />
-                        Logout
-                      </button>
-                    </div>
-                  </div>
+            <div style={styles.topBarActions}>
+              <button
+                onClick={() => navigate("/listings")}
+                disabled={isBusy}
+                style={{
+                  ...styles.secondaryButton,
+                  ...(isBusy ? styles.disabled : {})
+                }}
+              >
+                <ArrowLeft size={16} />
+                Back to Listings
+              </button>
+
+              <button
+                onClick={fetchProfile}
+                disabled={isBusy}
+                style={{
+                  ...styles.secondaryButton,
+                  ...(isBusy ? styles.disabled : {})
+                }}
+              >
+                <RefreshCw size={16} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {message.text ? (
+            <div
+              style={
+                message.type === "success"
+                  ? styles.bannerSuccess
+                  : styles.bannerError
+              }
+            >
+              {message.text}
+            </div>
+          ) : null}
+
+          <div style={styles.formGrid}>
+            <InputField
+              label="Full Name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter your full name"
+              icon={<User size={18} />}
+            />
+
+            <InputField
+              label="Email Address"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email address"
+              icon={<Mail size={18} />}
+              readOnly
+            />
+
+            <InputField
+              label="Phone Number"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Enter your phone number"
+              icon={<Phone size={18} />}
+            />
+
+            <InputField
+              label="Address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Enter your address"
+              icon={<MapPin size={18} />}
+            />
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Profile Description</label>
+              <div style={styles.textareaWrapper}>
+                <div style={styles.icon}>
+                  <FileText size={18} />
                 </div>
-              </div>
-
-              <div className="card-body p-4 p-md-5">
-                <div className="row g-4">
-                  <div className="col-lg-4">
-                    <div className="info-panel h-100">
-                      <h5 className="fw-bold mb-3">Profile Overview</h5>
-                      <p className="text-muted mb-4">
-                        Update your public and private details to keep your account accurate and professional.
-                      </p>
-
-                      <div className="overview-item">
-                        <div className="overview-icon">
-                          <User size={18} />
-                        </div>
-                        <div>
-                          <div className="overview-label">Full Name</div>
-                          <div className="overview-value">{formData.name || "Not added yet"}</div>
-                        </div>
-                      </div>
-
-                      <div className="overview-item">
-                        <div className="overview-icon">
-                          <Mail size={18} />
-                        </div>
-                        <div>
-                          <div className="overview-label">Email</div>
-                          <div className="overview-value">{formData.email || "Not available"}</div>
-                        </div>
-                      </div>
-
-                      <div className="overview-item">
-                        <div className="overview-icon">
-                          <Phone size={18} />
-                        </div>
-                        <div>
-                          <div className="overview-label">Phone</div>
-                          <div className="overview-value">{formData.phone || "Not added yet"}</div>
-                        </div>
-                      </div>
-
-                      <div className="overview-item">
-                        <div className="overview-icon">
-                          <MapPin size={18} />
-                        </div>
-                        <div>
-                          <div className="overview-label">Address</div>
-                          <div className="overview-value">{formData.address || "Not added yet"}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-lg-8">
-                    <div className="form-panel">
-                      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                        <div>
-                          <h4 className="fw-bold mb-1">Edit Profile</h4>
-                          <p className="text-muted mb-0">
-                            Manage your personal details and public profile information.
-                          </p>
-                        </div>
-                      </div>
-
-                      {banner.message && (
-                        <div
-                          className={`alert d-flex align-items-start gap-2 rounded-4 border-0 mb-4 ${
-                            banner.type === "success" ? "alert-success" : "alert-danger"
-                          }`}
-                        >
-                          {banner.type === "success" ? (
-                            <CheckCircle2 size={18} className="mt-1 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle size={18} className="mt-1 flex-shrink-0" />
-                          )}
-                          <div>{banner.message}</div>
-                        </div>
-                      )}
-
-                      <form onSubmit={handleSave}>
-                        <div className="row g-4">
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold text-dark">Full Name</label>
-                            <div className="input-modern">
-                              <User size={18} className="input-modern-icon" />
-                              <input
-                                type="text"
-                                className="form-control border-0 shadow-none"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="Enter your full name"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold text-dark">Email Address</label>
-                            <div className="input-modern readonly">
-                              <Mail size={18} className="input-modern-icon" />
-                              <input
-                                type="email"
-                                className="form-control border-0 shadow-none"
-                                value={formData.email}
-                                readOnly
-                                disabled
-                                placeholder="Verified email"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold text-dark">Phone Number</label>
-                            <div className={`input-modern ${errors.phone ? "input-error" : ""}`}>
-                              <Phone size={18} className="input-modern-icon" />
-                              <input
-                                type="tel"
-                                className="form-control border-0 shadow-none"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
-                                placeholder="Enter your phone number"
-                              />
-                            </div>
-                            {errors.phone && (
-                              <div className="text-danger small mt-2">{errors.phone}</div>
-                            )}
-                          </div>
-
-                          <div className="col-md-6">
-                            <label className="form-label fw-semibold text-dark">Address</label>
-                            <div className="input-modern">
-                              <MapPin size={18} className="input-modern-icon" />
-                              <input
-                                type="text"
-                                className="form-control border-0 shadow-none"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                placeholder="Enter your address"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-12">
-                            <label className="form-label fw-semibold text-dark">Bio / Description</label>
-                            <div className="textarea-modern">
-                              <FileText size={18} className="input-modern-icon mt-1" />
-                              <textarea
-                                className="form-control border-0 shadow-none"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                rows="5"
-                                placeholder="Tell other users a bit about yourself..."
-                                style={{ resize: "none" }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="col-12 pt-2">
-                            <button
-                              type="submit"
-                              disabled={isSaving}
-                              className="btn save-btn w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 border-0"
-                            >
-                              {isSaving ? (
-                                <>
-                                  <Loader2 className="spin" size={20} />
-                                  Saving...
-                                </>
-                              ) : (
-                                <>
-                                  <Save size={20} />
-                                  Save Profile
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
+                <textarea
+                  style={styles.textarea}
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Write something about yourself..."
+                />
               </div>
             </div>
           </div>
-        </motion.div>
+
+          <div style={styles.buttonRow}>
+            <button
+              onClick={updateProfile}
+              disabled={isBusy}
+              style={{
+                ...styles.primaryButton,
+                ...(isBusy ? styles.disabled : {})
+              }}
+            >
+              {workingAction === "put" ? (
+                <Loader2 size={16} style={styles.spinner} />
+              ) : (
+                <Save size={16} />
+              )}
+              Save Changes
+            </button>
+
+            <button
+              onClick={patchProfile}
+              disabled={isBusy}
+              style={{
+                ...styles.secondaryButton,
+                ...(isBusy ? styles.disabled : {})
+              }}
+            >
+              {workingAction === "patch" ? (
+                <Loader2 size={16} style={styles.spinner} />
+              ) : (
+                <SaveAll size={16} />
+              )}
+              Update
+            </button>
+          </div>
+
+          <div style={styles.actionSection}>
+            <div style={styles.sectionTitle}>Danger Zone</div>
+            <div style={styles.buttonRow}>
+              <button
+                onClick={deactivateAccount}
+                disabled={isBusy}
+                style={{
+                  ...styles.warningButton,
+                  ...(isBusy ? styles.disabled : {})
+                }}
+              >
+                {workingAction === "deactivate" ? (
+                  <Loader2 size={16} style={styles.spinner} />
+                ) : (
+                  <UserX size={16} />
+                )}
+                Deactivate Account
+              </button>
+
+              <button
+                onClick={deleteAccount}
+                disabled={isBusy}
+                style={{
+                  ...styles.dangerButton,
+                  ...(isBusy ? styles.disabled : {})
+                }}
+              >
+                {workingAction === "delete" ? (
+                  <Loader2 size={16} style={styles.spinner} />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <style>{`
-        .dashboard-bg {
-          background:
-            radial-gradient(circle at top left, rgba(25,135,84,0.10), transparent 35%),
-            radial-gradient(circle at bottom right, rgba(32,201,151,0.12), transparent 30%),
-            linear-gradient(135deg, #f8fafc 0%, #eefaf4 100%);
-        }
-
-        .dashboard-card {
-          background: rgba(255,255,255,0.94);
-          backdrop-filter: blur(10px);
-        }
-
-        .profile-hero {
-          background: linear-gradient(135deg, #157347 0%, #198754 45%, #20c997 100%);
-          min-height: 280px;
-          overflow: hidden;
-        }
-
-        .hero-overlay {
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 22%),
-            radial-gradient(circle at 80% 10%, rgba(255,255,255,0.12), transparent 18%),
-            radial-gradient(circle at 85% 80%, rgba(255,255,255,0.10), transparent 20%);
-        }
-
-        .profile-avatar {
-          width: 132px;
-          height: 132px;
-          border-radius: 50%;
-          overflow: hidden;
-          background: rgba(255,255,255,0.95);
-          border: 5px solid rgba(255,255,255,0.85);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .hero-badge {
-          background: rgba(255,255,255,0.16);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(255,255,255,0.22);
-        }
-
-        .mini-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
-          border-radius: 999px;
-          font-size: 13px;
-          font-weight: 600;
-          background: rgba(255,255,255,0.14);
-          color: white;
-          border: 1px solid rgba(255,255,255,0.18);
-        }
-
-        .hero-action-btn {
-          background: rgba(255,255,255,0.16);
-          backdrop-filter: blur(8px);
-        }
-
-        .hero-action-btn:hover {
-          background: rgba(255,255,255,0.24);
-          color: #fff;
-        }
-
-        .info-panel,
-        .form-panel {
-          background: #ffffff;
-          border: 1px solid #eef2f7;
-          border-radius: 24px;
-          padding: 24px;
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-          height: 100%;
-        }
-
-        .overview-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-          padding: 14px;
-          border-radius: 18px;
-          background: #f8fafc;
-          border: 1px solid #eef2f7;
-          margin-bottom: 14px;
-        }
-
-        .overview-icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, #198754, #20c997);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          flex-shrink: 0;
-        }
-
-        .overview-label {
-          font-size: 12px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: #6b7280;
-          margin-bottom: 2px;
-        }
-
-        .overview-value {
-          font-size: 15px;
-          font-weight: 600;
-          color: #111827;
-          word-break: break-word;
-        }
-
-        .input-modern,
-        .textarea-modern {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: #f8fafc;
-          border: 1px solid #e9eef5;
-          border-radius: 18px;
-          padding: 14px 16px;
-          transition: all 0.2s ease;
-        }
-
-        .textarea-modern {
-          align-items: flex-start;
-        }
-
-        .input-modern:focus-within,
-        .textarea-modern:focus-within {
-          background: #ffffff;
-          border-color: #20c997;
-          box-shadow: 0 0 0 4px rgba(32, 201, 151, 0.12);
-        }
-
-        .input-modern.readonly {
-          opacity: 0.85;
-          background: #f1f5f9;
-        }
-
-        .input-modern.input-error {
-          border-color: #dc3545;
-          box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.08);
-        }
-
-        .input-modern-icon {
-          color: #198754;
-          flex-shrink: 0;
-        }
-
-        .input-modern .form-control,
-        .textarea-modern .form-control {
-          background: transparent !important;
-          padding: 0;
-          font-size: 15px;
-          color: #111827;
-        }
-
-        .input-modern .form-control::placeholder,
-        .textarea-modern .form-control::placeholder {
-          color: #94a3b8;
-        }
-
-        .save-btn {
-          background: linear-gradient(135deg, #157347 0%, #198754 45%, #20c997 100%);
-          color: white;
-          box-shadow: 0 10px 24px rgba(25, 135, 84, 0.25);
-          transition: all 0.2s ease;
-        }
-
-        .save-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          color: white;
-          box-shadow: 0 14px 30px rgba(25, 135, 84, 0.3);
-        }
-
-        .save-btn:disabled {
-          opacity: 0.75;
-          cursor: not-allowed;
-        }
-
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
 
-        @media (max-width: 991px) {
-          .profile-hero {
-            min-height: auto;
-          }
-
-          .profile-avatar {
-            width: 108px;
-            height: 108px;
+        @media (max-width: 860px) {
+          .profile-layout {
+            grid-template-columns: 1fr !important;
           }
         }
 
-        @media (max-width: 576px) {
-          .profile-avatar {
-            width: 92px;
-            height: 92px;
-          }
+        input::placeholder,
+        textarea::placeholder {
+          color: #94a3b8;
+        }
 
-          .info-panel,
-          .form-panel {
-            padding: 18px;
-            border-radius: 20px;
-          }
+        button {
+          transition: all 0.2s ease;
+        }
+
+        button:hover:not(:disabled) {
+          transform: translateY(-1px);
         }
       `}</style>
     </div>
   );
-};
-
-export default Dashboard;
+}
