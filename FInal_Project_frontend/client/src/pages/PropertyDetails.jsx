@@ -32,6 +32,45 @@ import Toast from "../components/Toast";
 import { fetchAdById, getImageUrl, normalizeFacilities } from "../api/adsApi";
 import ProtectedImage from "../components/ProtectedImage";
 
+const USER_SERVICE_BASE_URL =
+  "https://a88642b8-2b68-4d73-b038-49eb67884ca4-prod.e1-us-east-azure.bijiraapis.dev/default/ceylonstay-user-service/v1.0";
+
+const pickFirstValidText = (...values) => {
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (!text) continue;
+    if (text.toLowerCase() === "null" || text.toLowerCase() === "undefined") continue;
+    return text;
+  }
+
+  return "";
+};
+
+const normalizeWhatsAppNumber = (phone) => {
+  const digits = String(phone || "").replace(/\D+/g, "");
+  if (!digits) return "";
+
+  if (digits.startsWith("94")) {
+    return digits;
+  }
+
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return `94${digits.slice(1)}`;
+  }
+
+  return digits;
+};
+
+const buildWhatsAppLink = (phone, propertyTitle) => {
+  const normalized = normalizeWhatsAppNumber(phone);
+  if (!normalized) return "";
+
+  const text = encodeURIComponent(
+    `Hi, I'm interested in ${propertyTitle || "your property"}. Is it still available?`
+  );
+  return `https://wa.me/${normalized}?text=${text}`;
+};
+
 const PropertyDetails = () => {
   const { id } = useParams();
   const { t } = useLanguage();
@@ -46,6 +85,7 @@ const PropertyDetails = () => {
   const [isSending, setIsSending] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [accessToken, setAccessToken] = useState("");
+  const [phoneLoading, setPhoneLoading] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -63,17 +103,41 @@ const PropertyDetails = () => {
         const imageList = Array.isArray(data?.images) ? data.images : [];
         const imageNames = imageList.length ? imageList : [null];
 
+        const ownerEmail = pickFirstValidText(
+          data?.owner_email,
+          data?.user_email,
+          data?.owner?.email,
+          data?.contact?.email
+        );
+
+        const ownerPhone = pickFirstValidText(
+          data?.phone,
+          data?.owner_phone,
+          data?.user_phone,
+          data?.contact_phone,
+          data?.contact_number,
+          data?.mobile,
+          data?.owner?.phone,
+          data?.owner?.mobile,
+          data?.contact?.phone
+        );
+
+        const ownerName = pickFirstValidText(
+          data?.owner_name,
+          data?.user_name,
+          data?.owner?.name,
+          ownerEmail ? ownerEmail.split("@")[0] : ""
+        );
+
         setProperty({
           ...data,
           facilities,
           imageNames,
           owner: {
-            name: data?.owner_email
-              ? data.owner_email.split("@")[0]
-              : "Property Owner",
+            name: ownerName || "Property Owner",
             since: "2024",
-            phone: data?.phone || null,
-            email: data?.owner_email || ""
+            phone: ownerPhone || null,
+            email: ownerEmail || ""
           }
         });
       } catch (err) {
@@ -106,6 +170,10 @@ const PropertyDetails = () => {
     return "Not Furnished";
   }, [property]);
 
+  const ownerWhatsAppLink = useMemo(() => {
+    return buildWhatsAppLink(property?.owner?.phone, property?.title);
+  }, [property?.owner?.phone, property?.title]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!property?.owner?.email) return;
@@ -123,6 +191,70 @@ const PropertyDetails = () => {
       window.location.href = `mailto:${property.owner.email}?subject=${subject}&body=${body}`;
       setMessageText("");
     }, 700);
+  };
+
+  const fetchPhoneFromUserService = async (ownerEmail) => {
+    const normalizedEmail = pickFirstValidText(ownerEmail);
+    if (!normalizedEmail) return "";
+
+    const token = accessToken || (state?.isAuthenticated ? await getAccessToken() : "");
+    if (!token) return "";
+
+    const response = await fetch(`${USER_SERVICE_BASE_URL}/profile`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "X-User-Email": normalizedEmail
+      }
+    });
+
+    if (!response.ok) {
+      return "";
+    }
+
+    const profile = await response.json();
+    return pickFirstValidText(profile?.phone, profile?.mobile, profile?.contact_phone);
+  };
+
+  const handleShowPhoneClick = async () => {
+    if (showPhone && property?.owner?.phone && ownerWhatsAppLink) {
+      window.open(ownerWhatsAppLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (property?.owner?.phone) {
+      setShowPhone(true);
+      return;
+    }
+
+    if (!property?.owner?.email) {
+      setShowPhone(true);
+      return;
+    }
+
+    try {
+      setPhoneLoading(true);
+      const fetchedPhone = await fetchPhoneFromUserService(property.owner.email);
+
+      if (fetchedPhone) {
+        setProperty((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            owner: {
+              ...prev.owner,
+              phone: fetchedPhone
+            }
+          };
+        });
+      }
+    } catch (lookupError) {
+      console.error("Failed to fetch owner phone by email:", lookupError);
+    } finally {
+      setPhoneLoading(false);
+      setShowPhone(true);
+    }
   };
 
   if (loading) {
@@ -338,14 +470,19 @@ const PropertyDetails = () => {
                   <div className="d-grid gap-3">
                     <Button
                       variant={showPhone ? "light" : "success"}
-                      onClick={() => setShowPhone((prev) => !prev)}
+                      onClick={handleShowPhoneClick}
                       className={`py-2 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-pill border-0 shadow-sm ${
                         showPhone ? "text-dark" : ""
                       }`}
+                      disabled={phoneLoading}
                     >
                       <Phone size={18} />
-                      {showPhone
-                        ? property.owner.phone || "Phone not available"
+                      {phoneLoading
+                        ? "Loading phone..."
+                        : showPhone
+                        ? property.owner.phone
+                          ? `${property.owner.phone} (Tap for WhatsApp)`
+                          : "Phone not available"
                         : t("property.showPhone") || "SHOW PHONE NUMBER"}
                     </Button>
 
