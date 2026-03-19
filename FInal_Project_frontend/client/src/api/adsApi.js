@@ -211,6 +211,25 @@ export const deleteAdById = async (accessToken, adId, email) => {
   return parseApiResponse(response);
 };
 
+export const updateAdById = async (accessToken, adId, email, payload) => {
+  const response = await fetch(`${BIJIRA_BASE_URL}/ads/${adId}`, {
+    method: "PUT",
+    headers: getAuthHeaders(accessToken, email, true),
+    body: JSON.stringify(payload)
+  });
+
+  return parseApiResponse(response);
+};
+
+export const deactivateAdById = async (accessToken, adId, email) => {
+  const response = await fetch(`${BIJIRA_BASE_URL}/ads/${adId}/deactivate`, {
+    method: "PATCH",
+    headers: getAuthHeaders(accessToken, email, false)
+  });
+
+  return parseApiResponse(response);
+};
+
 export const updateDraftAd = async (accessToken, adId, email, payload) => {
   const response = await fetch(`${BIJIRA_BASE_URL}/ads/draft/${adId}`, {
     method: "PUT",

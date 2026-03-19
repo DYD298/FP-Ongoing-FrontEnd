@@ -30,6 +30,7 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import Toast from "../components/Toast";
 import { fetchAdById, getImageUrl, normalizeFacilities } from "../api/adsApi";
+import { fetchPublicAdById } from "../api/searchApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const USER_SERVICE_BASE_URL =
@@ -86,6 +87,7 @@ const PropertyDetails = () => {
   const [showToast, setShowToast] = useState(false);
   const [accessToken, setAccessToken] = useState("");
   const [phoneLoading, setPhoneLoading] = useState(false);
+  const [usePublicData, setUsePublicData] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -95,9 +97,40 @@ const PropertyDetails = () => {
       try {
         const token = state?.isAuthenticated ? await getAccessToken() : "";
         const email = state?.email || "";
-        setAccessToken(token || "");
+        let sourceIsPublic = !state?.isAuthenticated;
+        let data = null;
 
-        const data = await fetchAdById(token, id, email);
+        if (state?.isAuthenticated) {
+          try {
+            data = await fetchAdById(token, id, email);
+          } catch (protectedError) {
+            const errText = String(protectedError?.message || "").toLowerCase();
+            const shouldFallbackToPublic =
+              !token ||
+              errText.includes("401") ||
+              errText.includes("403") ||
+              errText.includes("invalid_token") ||
+              errText.includes("unauthorized") ||
+              errText.includes("forbidden");
+
+            if (!shouldFallbackToPublic) {
+              throw protectedError;
+            }
+
+            data = await fetchPublicAdById(id);
+            sourceIsPublic = true;
+          }
+        } else {
+          data = await fetchPublicAdById(id);
+          sourceIsPublic = true;
+        }
+
+        if (!data) {
+          throw new Error("Property not found");
+        }
+
+        setUsePublicData(sourceIsPublic);
+        setAccessToken(sourceIsPublic ? "" : token || "");
 
         const facilities = normalizeFacilities(data?.facilities);
         const imageList = Array.isArray(data?.images) ? data.images : [];
@@ -149,7 +182,7 @@ const PropertyDetails = () => {
     };
 
     fetchProperty();
-  }, [getAccessToken, id, state?.isAuthenticated]);
+  }, [getAccessToken, id, state?.email, state?.isAuthenticated]);
 
   const isPending = useMemo(() => {
     return String(property?.status || "").toUpperCase() === "PENDING";
@@ -351,7 +384,7 @@ const PropertyDetails = () => {
                   <Carousel.Item key={index}>
                     <ProtectedImage
                       className="d-block w-100"
-                      imageUrl={imageName ? getImageUrl(imageName) : null}
+                      imageUrl={imageName ? getImageUrl(imageName, { usePublic: usePublicData }) : null}
                       token={accessToken}
                       alt={`Property view ${index + 1}`}
                       style={{ height: "500px", objectFit: "cover" }}

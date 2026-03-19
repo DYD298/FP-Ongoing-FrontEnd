@@ -6,14 +6,14 @@ import {
   MapPin,
   Bed,
   Bath,
-  RefreshCw,
   Trash2,
   FileText,
   PlusCircle,
-  Pencil
+  Pencil,
+  PauseCircle
 } from "lucide-react";
 import { useAuthContext } from "@asgardeo/auth-react";
-import { fetchMyAds, deleteAdById, getImageUrl } from "../api/adsApi";
+import { fetchMyAds, deleteAdById, deactivateAdById, getImageUrl } from "../api/adsApi";
 import ProtectedImage from "../components/ProtectedImage";
 
 const getStatusBadgeConfig = (ad) => {
@@ -39,6 +39,10 @@ const getStatusBadgeConfig = (ad) => {
     return { label: "Draft", bg: "secondary" };
   }
 
+  if (rawStatus === "INACTIVE" || rawStatus === "DEACTIVATED") {
+    return { label: "Deactivated", bg: "dark" };
+  }
+
   if (rawStatus) {
     return {
       label: rawStatus.charAt(0) + rawStatus.slice(1).toLowerCase(),
@@ -55,6 +59,7 @@ const MyAds = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [deactivatingId, setDeactivatingId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAd, setSelectedAd] = useState(null);
   const [accessToken, setAccessToken] = useState("");
@@ -123,6 +128,29 @@ const MyAds = () => {
     }
   };
 
+  const handleDeactivate = async (ad) => {
+    if (!ad?.id) return;
+
+    const confirmed = window.confirm(
+      `Deactivate "${ad.title || "this ad"}"? It will be hidden from active listings.`
+    );
+    if (!confirmed) return;
+
+    setDeactivatingId(ad.id);
+    setError("");
+
+    try {
+      const { accessToken, email } = await getSessionAuth();
+      await deactivateAdById(accessToken, ad.id, email);
+      await loadMyAds();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Deactivate failed");
+    } finally {
+      setDeactivatingId(null);
+    }
+  };
+
   return (
     <div className="bg-light min-vh-100 py-5" style={{ paddingTop: "100px" }}>
       <Container>
@@ -154,6 +182,13 @@ const MyAds = () => {
           <Row className="g-4">
             {ads.map((ad, idx) => {
               const statusBadge = getStatusBadgeConfig(ad);
+              const rawStatus = String(
+                ad?.status ??
+                  (ad?.is_active === true ? "ACTIVE" : ad?.is_active === false ? "DRAFT" : "")
+              )
+                .trim()
+                .toUpperCase();
+              const canDeactivate = rawStatus === "ACTIVE";
 
               return (
                 <Col md={6} xl={4} key={ad.id || idx}>
@@ -211,16 +246,27 @@ const MyAds = () => {
                             className="btn btn-outline-success rounded-pill fw-semibold"
                           >
                             <Pencil size={15} className="me-2" />
-                            Edit Draft
+                            Update Ad
                           </Link>
+
+                          <Button
+                            variant="outline-warning"
+                            className="rounded-pill fw-semibold"
+                            onClick={() => handleDeactivate(ad)}
+                            disabled={!canDeactivate || deactivatingId === ad.id}
+                          >
+                            <PauseCircle size={15} className="me-2" />
+                            {deactivatingId === ad.id ? "Deactivating..." : "Deactivate Ad"}
+                          </Button>
 
                           <Button
                             variant="outline-danger"
                             className="rounded-pill fw-semibold"
                             onClick={() => openDeleteModal(ad)}
+                            disabled={deletingId === ad.id}
                           >
                             <Trash2 size={15} className="me-2" />
-                            Delete Ad
+                            {deletingId === ad.id ? "Deleting..." : "Delete Ad"}
                           </Button>
                         </div>
                       </Card.Body>

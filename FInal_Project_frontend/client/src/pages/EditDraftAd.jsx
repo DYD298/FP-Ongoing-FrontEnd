@@ -5,6 +5,7 @@ import { Save, Send, ArrowLeft, MapPinHouse, X } from "lucide-react";
 import { useAuthContext } from "@asgardeo/auth-react";
 import {
   fetchAdById,
+  updateAdById,
   updateDraftAd,
   publishDraftAd,
   normalizeFacilities
@@ -18,6 +19,13 @@ const facilityOptions = [
   "Laundry",
   "Air Conditioning"
 ];
+
+const getAdStatus = (ad) =>
+  String(
+    ad?.status ?? (ad?.is_active === true ? "ACTIVE" : ad?.is_active === false ? "DRAFT" : "")
+  )
+    .trim()
+    .toUpperCase();
 
 const EditDraftAd = () => {
   const { adId } = useParams();
@@ -43,6 +51,7 @@ const EditDraftAd = () => {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [adStatus, setAdStatus] = useState("DRAFT");
 
   const getSessionAuth = useCallback(async () => {
     const accessToken = await getAccessToken();
@@ -71,6 +80,7 @@ const EditDraftAd = () => {
       try {
         const { accessToken, email } = await getSessionAuth();
         const data = await fetchAdById(accessToken, adId, email);
+        setAdStatus(getAdStatus(data));
 
         setFormData({
           title: data?.title || "",
@@ -97,7 +107,7 @@ const EditDraftAd = () => {
   }, [adId, getSessionAuth, state?.isAuthenticated]);
 
   const canPublish = useMemo(() => {
-    return (
+    return adStatus === "DRAFT" && (
       formData.title &&
       formData.description &&
       formData.price !== "" &&
@@ -109,7 +119,7 @@ const EditDraftAd = () => {
       formData.baths !== "" &&
       formData.images.length > 0
     );
-  }, [formData]);
+  }, [adStatus, formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -135,7 +145,7 @@ const EditDraftAd = () => {
     }));
   };
 
-  const handleSaveDraft = async (e) => {
+  const handleSaveAd = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError("");
@@ -143,18 +153,37 @@ const EditDraftAd = () => {
 
     try {
       const { accessToken, email } = await getSessionAuth();
-      await updateDraftAd(accessToken, adId, email, {
+      const payload = {
         ...formData,
         price: formData.price === "" ? null : Number(formData.price),
         beds: formData.beds === "" ? null : Number(formData.beds),
-        baths: formData.baths === "" ? null : Number(formData.baths),
-        images: formData.images
-      });
+        baths: formData.baths === "" ? null : Number(formData.baths)
+      };
 
-      setSuccess("Draft updated successfully.");
+      if (adStatus === "DRAFT") {
+        await updateDraftAd(accessToken, adId, email, {
+          ...payload,
+          images: formData.images
+        });
+      } else {
+        await updateAdById(accessToken, adId, email, {
+          title: payload.title || null,
+          description: payload.description || null,
+          price: payload.price,
+          address: payload.address || null,
+          province: payload.province || null,
+          district: payload.district || null,
+          type: payload.type || null,
+          beds: payload.beds,
+          baths: payload.baths,
+          facilities: Array.isArray(payload.facilities) ? payload.facilities : []
+        });
+      }
+
+      setSuccess(adStatus === "DRAFT" ? "Draft updated successfully." : "Ad updated successfully.");
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to update draft");
+      setError(err.message || "Failed to update ad");
     } finally {
       setSaving(false);
     }
@@ -208,8 +237,12 @@ const EditDraftAd = () => {
       <Container>
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
-            <h2 className="fw-bold mb-1">Edit Draft Ad</h2>
-            <p className="text-muted mb-0">Update your draft and publish when ready.</p>
+            <h2 className="fw-bold mb-1">{adStatus === "DRAFT" ? "Edit Draft Ad" : "Update Ad"}</h2>
+            <p className="text-muted mb-0">
+              {adStatus === "DRAFT"
+                ? "Update your draft and publish when ready."
+                : "Update your posted ad details."}
+            </p>
           </div>
 
           <Button variant="light" className="rounded-pill fw-semibold" onClick={() => navigate(-1)}>
@@ -225,7 +258,7 @@ const EditDraftAd = () => {
                 {error && <div className="alert alert-danger rounded-4">{error}</div>}
                 {success && <div className="alert alert-success rounded-4">{success}</div>}
 
-                <Form onSubmit={handleSaveDraft}>
+                <Form onSubmit={handleSaveAd}>
                   <Row className="g-4">
                     <Col md={12}>
                       <Form.Group>
@@ -361,7 +394,7 @@ const EditDraftAd = () => {
                       </div>
                     </Col>
 
-                    {formData.images.length > 0 && (
+                    {formData.images.length > 0 && adStatus === "DRAFT" && (
                       <Col md={12}>
                         <div className="small text-muted mb-2">Existing Draft Images</div>
                         <div className="d-flex flex-wrap gap-2">
@@ -397,19 +430,21 @@ const EditDraftAd = () => {
                           disabled={saving}
                         >
                           <Save size={16} className="me-2" />
-                          {saving ? "Saving..." : "Save Draft"}
+                          {saving ? "Saving..." : adStatus === "DRAFT" ? "Save Draft" : "Update Ad"}
                         </Button>
 
-                        <Button
-                          type="button"
-                          variant="dark"
-                          className="rounded-pill px-4 fw-semibold"
-                          onClick={handlePublish}
-                          disabled={publishing || !canPublish}
-                        >
-                          <Send size={16} className="me-2" />
-                          {publishing ? "Publishing..." : "Publish Draft"}
-                        </Button>
+                        {adStatus === "DRAFT" && (
+                          <Button
+                            type="button"
+                            variant="dark"
+                            className="rounded-pill px-4 fw-semibold"
+                            onClick={handlePublish}
+                            disabled={publishing || !canPublish}
+                          >
+                            <Send size={16} className="me-2" />
+                            {publishing ? "Publishing..." : "Publish Draft"}
+                          </Button>
+                        )}
                       </div>
                     </Col>
                   </Row>
@@ -423,7 +458,7 @@ const EditDraftAd = () => {
               <Card.Body className="p-4">
                 <div className="d-flex align-items-center gap-2 mb-3">
                   <MapPinHouse size={18} className="text-success" />
-                  <h5 className="fw-bold mb-0">Draft Summary</h5>
+                  <h5 className="fw-bold mb-0">Ad Summary</h5>
                 </div>
 
                 <div className="mb-3">
@@ -463,7 +498,9 @@ const EditDraftAd = () => {
                 <hr />
 
                 <p className="small text-muted mb-0">
-                  Publish is enabled once the essential fields are filled.
+                  {adStatus === "DRAFT"
+                    ? "Publish is enabled once the essential fields are filled."
+                    : "Update saves your changes to this ad."}
                 </p>
               </Card.Body>
             </Card>
